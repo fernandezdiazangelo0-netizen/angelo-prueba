@@ -1,0 +1,146 @@
+@page "/admin-products"
+@using Microsoft.AspNetCore.Authorization
+@using SexShopWASM.Models
+@attribute [Authorize(Roles = "Admin")]
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+
+<h3>Manage Products (Admin)</h3>
+
+<div class="card mb-4">
+    <div class="card-header">
+        @(currentProduct.Id == 0 ? "Add New Product" : "Edit Product")
+    </div>
+    <div class="card-body">
+        <EditForm Model="currentProduct" OnValidSubmit="SaveProduct">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label>Name</label>
+                    <InputText @bind-Value="currentProduct.Name" class="form-control" />
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>Category</label>
+                    <InputText @bind-Value="currentProduct.Category" class="form-control" />
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label>Description</label>
+                <InputTextArea @bind-Value="currentProduct.Description" class="form-control" />
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label>Price</label>
+                    <InputNumber @bind-Value="currentProduct.Price" class="form-control" />
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>Image URL</label>
+                    <InputText @bind-Value="currentProduct.ImageUrl" class="form-control" placeholder="https://..." />
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Save Product</button>
+            @if(currentProduct.Id != 0)
+            {
+                <button type="button" class="btn btn-secondary ms-2" @onclick="ResetForm">Cancel</button>
+            }
+        </EditForm>
+    </div>
+</div>
+
+@if (products == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>Image</th>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var product in products)
+            {
+                <tr>
+                    <td>
+                        @if(!string.IsNullOrEmpty(product.ImageUrl))
+                        {
+                            <img src="@product.ImageUrl" alt="img" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;" />
+                        }
+                    </td>
+                    <td>@product.Name</td>
+                    <td>@product.Category</td>
+                    <td>@product.Price</td>
+                    <td>
+                        <button class="btn btn-warning btn-sm me-2" @onclick="() => EditProduct(product)">Edit</button>
+                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteProduct(product.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private Product[]? products;
+    private Product currentProduct = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProducts();
+    }
+
+    private async Task LoadProducts()
+    {
+        products = await Http.GetFromJsonAsync<Product[]>("api/Products");
+    }
+
+    private async Task SaveProduct()
+    {
+        if (currentProduct.Id == 0)
+        {
+            await Http.PostAsJsonAsync("api/Products", currentProduct);
+        }
+        else
+        {
+            await Http.PutAsJsonAsync($"api/Products/{currentProduct.Id}", currentProduct);
+        }
+        
+        ResetForm();
+        await LoadProducts();
+    }
+
+    private async Task DeleteProduct(int id)
+    {
+        await Http.DeleteAsync($"api/Products/{id}");
+        await LoadProducts();
+    }
+
+    private void EditProduct(Product product)
+    {
+        currentProduct = new Product
+        {
+            Id = product.Id,
+            Name = product.Name,
+            Description = product.Description,
+            Price = product.Price,
+            Category = product.Category,
+            ImageUrl = product.ImageUrl
+        };
+    }
+
+    private void ResetForm()
+    {
+        currentProduct = new Product();
+    }
+}

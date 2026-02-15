@@ -1,0 +1,165 @@
+@page "/cart"
+@inject SexShopWASM.Services.ICartService CartService
+@inject NavigationManager NavigationManager
+@using SexShopWASM.Models
+
+<div class="container py-5">
+    <div class="cart-header mb-5 glass p-4 animate-up" style="border-radius: 20px;">
+        <h2 class="display-5 fw-bold text-primary mb-2">Your Shopping Cart</h2>
+        <p class="text-muted mb-0">Review your items and proceed to checkout for a world of pleasure.</p>
+    </div>
+
+    @if (cartItems == null || !cartItems.Any())
+    {
+        <div class="empty-cart-container text-center py-5 glass" style="border-radius: 20px;">
+            <i class="bi bi-cart-x display-1 text-muted mb-4"></i>
+            <h3 class="fw-bold mb-3">Your cart is empty</h3>
+            <p class="text-muted mb-4">Explore our exquisite collection and find something you'll love.</p>
+            <a href="products" class="btn btn-primary btn-lg rounded-pill px-5 shadow">
+                Start Shopping
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            <!-- Items List -->
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm glass overflow-hidden" style="border-radius: 20px;">
+                    <div class="list-group list-group-flush">
+                        @foreach (var item in cartItems)
+                        {
+                            <div class="list-group-item bg-transparent p-4 border-bottom-0">
+                                <div class="row align-items-center">
+                                    <div class="col-md-2 col-3">
+                                        <div class="rounded-3 overflow-hidden shadow-sm" style="height: 100px;">
+                                            <img src="@(string.IsNullOrEmpty(item.Product.ImageUrl) ? "https://placehold.co/100x100?text=No+Image" : item.Product.ImageUrl)" 
+                                                 alt="@item.Product.Name" class="w-100 h-100" style="object-fit: cover;">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-5 col-9">
+                                        <h5 class="fw-bold mb-1">@item.Product.Name</h5>
+                                        <p class="text-muted small mb-0">@item.Product.Category</p>
+                                        <div class="mt-2 d-md-none">
+                                            <span class="fw-bold text-primary">$@item.Product.Price</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 col-6 mt-3 mt-md-0">
+                                        <div class="input-group input-group-sm quantity-selector shadow-sm rounded-pill overflow-hidden" style="width: 120px;">
+                                            <button class="btn btn-light border-0" type="button" @onclick="() => RemoveFromCart(item.Product.Id)">
+                                                <i class="bi bi-dash"></i>
+                                            </button>
+                                            <input type="text" class="form-control border-0 text-center fw-bold" value="@item.Quantity" readonly>
+                                            <button class="btn btn-light border-0" type="button" @onclick="() => AddToCart(item.Product)">
+                                                <i class="bi bi-plus"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2 col-6 text-end mt-3 mt-md-0">
+                                        <div class="d-flex flex-column align-items-end">
+                                            <span class="h5 fw-bold text-primary mb-1">$@(item.Product.Price * item.Quantity)</span>
+                                            <button class="btn btn-link text-danger p-0 text-decoration-none small" @onclick="() => RemoveCompletely(item.Product.Id)">
+                                                <i class="bi bi-trash me-1"></i> Remove
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <button class="btn btn-outline-secondary rounded-pill px-4" @onclick="ClearCart">
+                        <i class="bi bi-trash3 me-2"></i> Clear Cart
+                    </button>
+                </div>
+            </div>
+
+            <!-- Summary -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow shadow-primary-hover glass p-4" style="border-radius: 20px;">
+                    <h4 class="fw-bold mb-4">Order Summary</h4>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Subtotal (@CartService.GetTotalItems() items)</span>
+                        <span class="fw-bold">$@CartService.GetTotalPrice()</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Shipping</span>
+                        <span class="text-success fw-bold">Free</span>
+                    </div>
+                    <hr class="my-4">
+                    <div class="d-flex justify-content-between mb-4">
+                        <span class="h5 fw-bold">Total</span>
+                        <span class="h4 fw-bold text-primary">$@CartService.GetTotalPrice()</span>
+                    </div>
+                    <button class="btn btn-primary btn-lg w-100 rounded-pill shadow mb-3" @onclick="ProceedToCheckout">
+                        Checkout Now <i class="bi bi-arrow-right ms-2"></i>
+                    </button>
+                    <p class="text-center text-muted small mb-0">
+                        <i class="bi bi-shield-check me-1"></i> Secure and discrete shipping
+                    </p>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .glass {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    .quantity-selector .btn:hover {
+        background-color: var(--primary-color) !important;
+        color: white !important;
+    }
+    .shadow-primary-hover {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .shadow-primary-hover:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 1rem 3rem rgba(136, 14, 79, 0.1) !important;
+    }
+</style>
+
+@code {
+    private List<CartItem>? cartItems;
+
+    protected override async Task OnInitializedAsync()
+    {
+        cartItems = await CartService.GetItems();
+        CartService.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        CartService.OnChange -= StateHasChanged;
+    }
+
+    private async Task AddToCart(Product product)
+    {
+        await CartService.AddToCart(product);
+    }
+
+    private async Task RemoveFromCart(int productId)
+    {
+        await CartService.RemoveFromCart(productId);
+    }
+
+    private async Task RemoveCompletely(int productId)
+    {
+        await CartService.RemoveCompletely(productId);
+    }
+
+    private async Task ClearCart()
+    {
+        await CartService.ClearCart();
+    }
+
+    private void ProceedToCheckout()
+    {
+        // Placeholder for checkout logic
+    }
+}

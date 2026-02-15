@@ -1,0 +1,6 @@
+@SexShopAPI_HostAddress = http://localhost:5138
+
+GET {{SexShopAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

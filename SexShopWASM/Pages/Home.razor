@@ -1,0 +1,94 @@
+﻿@page "/"
+@inject HttpClient Http
+@inject SexShopWASM.Services.ICartService CartService
+@using SexShopWASM.Models
+
+<PageTitle>SexShop - Premium Adult Experience</PageTitle>
+
+<!-- Hero Section -->
+<div class="hero-section text-white position-relative overflow-hidden mb-5" style="background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://placehold.co/2000x500?text=Premium+Adult+Experience'); background-size: cover; background-position: center; border-radius: 20px; height: 500px;">
+    <div class="container h-100 d-flex align-items-center">
+        <div class="hero-content animate-up" style="max-width: 600px;">
+            <h1 class="display-3 fw-bold mb-3 text-white">Elevate Your Passion</h1>
+            <p class="lead mb-4 opacity-90">Discover a world of elegance and intimacy with our curated collection of premium lifestyle products.</p>
+            <div class="d-flex gap-3">
+                <a href="products" class="btn btn-primary btn-lg px-5 shadow">Shop Now</a>
+                <button class="btn btn-outline-light btn-lg px-5">Our Story</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Featured Categories -->
+<div class="container mb-5">
+    <div class="text-center mb-5">
+        <h2 class="display-5 fw-bold text-primary">Explore Categories</h2>
+        <div class="mx-auto bg-primary my-3" style="width: 50px; height: 3px;"></div>
+    </div>
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="category-card position-relative overflow-hidden rounded-4 shadow-sm" style="height: 300px;">
+                <img src="https://placehold.co/600x300?text=Premium+Toys" class="w-100 h-100 object-fit-cover transition" alt="Toys" />
+                <div class="category-overlay p-4 d-flex flex-column justify-content-end">
+                    <h3 class="text-white h4 mb-0">Premium Toys</h3>
+                    <p class="text-white-50 small mb-0">Innovative design for refined tastes.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="category-card position-relative overflow-hidden rounded-4 shadow-sm" style="height: 300px;">
+                <img src="https://placehold.co/600x300?text=Elegant+Lingerie" class="w-100 h-100 object-fit-cover transition" alt="Lingerie" />
+                <div class="category-overlay p-4 d-flex flex-column justify-content-end">
+                    <h3 class="text-white h4 mb-0">Elegant Lingerie</h3>
+                    <p class="text-white-50 small mb-0">Feel beautiful in every layer.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="category-card position-relative overflow-hidden rounded-4 shadow-sm" style="height: 300px;">
+                <img src="https://placehold.co/600x300?text=Sensual+Essentials" class="w-100 h-100 object-fit-cover transition" alt="Essentials" />
+                <div class="category-overlay p-4 d-flex flex-column justify-content-end">
+                    <h3 class="text-white h4 mb-0">Sensual Essentials</h3>
+                    <p class="text-white-50 small mb-0">The perfect touch for your journey.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Why Choose Us -->
+<div class="bg-white py-5 shadow-sm rounded-4 mb-5 card">
+    <div class="container text-center py-4">
+        <h2 class="fw-bold mb-5">Why SexShop?</h2>
+        <div class="row g-5">
+            <div class="col-md-4">
+                <i class="bi bi-shield-check display-4 text-primary mb-3"></i>
+                <h4 class="fw-bold">Discreet Delivery</h4>
+                <p class="text-muted">Plain packaging ensures your privacy is always protected.</p>
+            </div>
+            <div class="col-md-4">
+                <i class="bi bi-gem display-4 text-primary mb-3"></i>
+                <h4 class="fw-bold">Premium Quality</h4>
+                <p class="text-muted">Only the finest body-safe materials for your pleasure.</p>
+            </div>
+            <div class="col-md-4">
+                <i class="bi bi-heart display-4 text-primary mb-3"></i>
+                <h4 class="fw-bold">Expert Support</h4>
+                <p class="text-muted">Our team is here to guide you with care and respect.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .category-card img { transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+    .category-card:hover img { transform: scale(1.1); }
+    .category-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(transparent, rgba(0,0,0,0.8));
+    }
+</style>

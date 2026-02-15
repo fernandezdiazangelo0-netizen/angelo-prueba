@@ -1,0 +1,96 @@
+@page "/products"
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject SexShopWASM.Services.ICartService CartService
+@using SexShopWASM.Models
+
+<div class="products-header text-center py-5 mb-5 glass animate-up" style="border-radius: 20px;">
+    <h2 class="display-4 fw-bold text-primary mb-3">Exquisite Collection</h2>
+    <p class="lead text-muted mx-auto" style="max-width: 600px;">Indulge in our carefully selected range of premium products designed for your ultimate satisfaction.</p>
+</div>
+
+@if (products == null)
+{
+    <div class="d-flex justify-content-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+else
+{
+    <div class="container pb-5">
+        <div class="row row-cols-1 row-cols-md-3 g-5">
+            @foreach (var product in products)
+            {
+                <div class="col">
+                    <div class="card h-100 product-card shadow-sm overflow-hidden">
+                        <div class="position-relative overflow-hidden" style="height: 350px;">
+                            <img src="@(string.IsNullOrEmpty(product.ImageUrl) ? "https://placehold.co/300x400?text=No+Image" : product.ImageUrl)" 
+                                 class="card-img-top w-100 h-100" alt="@product.Name" 
+                                 style="object-fit: cover; transition: transform 0.8s cubic-bezier(0.2, 1, 0.22, 1);">
+                            <div class="product-overlay">
+                                <button class="btn btn-primary rounded-pill shadow px-4 py-2" @onclick="() => AddToCart(product)">
+                                    <i class="bi bi-cart-plus me-2"></i> Add to Cart
+                                </button>
+                            </div>
+                            <span class="badge position-absolute top-0 end-0 m-3 px-3 py-2 bg-white text-primary rounded-pill shadow-sm small fw-bold">
+                                @product.Category
+                            </span>
+                        </div>
+                        <div class="card-body p-4 text-center">
+                            <h5 class="card-title fw-bold mb-2">@product.Name</h5>
+                            <p class="card-text text-muted small mb-3">@product.Description</p>
+                            <div class="d-flex justify-content-center align-items-center gap-3">
+                                <span class="h4 mb-0 text-primary fw-bold">$@product.Price</span>
+                                <button class="btn btn-outline-primary btn-sm rounded-pill px-4" @onclick="() => AddToCart(product)">
+                                    Quick Buy
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+<style>
+    .product-card {
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+    .product-card:hover img {
+        transform: scale(1.1);
+    }
+    .product-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: all 0.4s ease;
+        backdrop-filter: blur(2px);
+    }
+    .product-card:hover .product-overlay {
+        opacity: 1;
+    }
+</style>
+
+@code {
+    private Product[]? products;
+
+    protected override async Task OnInitializedAsync()
+    {
+        products = await Http.GetFromJsonAsync<Product[]>("api/Products");
+    }
+
+    private async Task AddToCart(Product product)
+    {
+        await CartService.AddToCart(product);
+    }
+}
