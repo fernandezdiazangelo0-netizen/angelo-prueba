@@ -51,9 +51,17 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Deploy to Vercel
-        run: vercel deploy --prebuilt --prod --token ${{ secrets.VERCEL_TOKEN }} --yes
+        run: |
+          vercel deploy --prebuilt --prod --token ${{ secrets.VERCEL_TOKEN }} --yes 2>&1 | tee deploy-output.txt
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Upload deploy logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-logs
+          path: deploy-output.txt
 
 
