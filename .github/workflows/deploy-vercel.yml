@@ -21,11 +21,12 @@ jobs:
       - name: Publish Blazor WASM
         run: dotnet publish SexShopWASM/SexShopWASM.csproj -c Release -o release --nologo
 
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
       - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod'
-          working-directory: release/wwwroot
+        run: vercel --token ${{ secrets.VERCEL_TOKEN }} --prod --yes
+        working-directory: release/wwwroot
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
