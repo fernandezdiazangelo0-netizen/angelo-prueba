@@ -37,15 +37,15 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
-      - name: Prepare Vercel output
+      - name: Prepare deployment folder
         run: |
+          mkdir -p deploy
+          cp -r release/wwwroot/* deploy/
+          cp vercel.json deploy/
+          
+          # Also create project.json in the current dir just in case
           mkdir -p .vercel
           echo '{"orgId":"'"$VERCEL_ORG_ID"'","projectId":"'"$VERCEL_PROJECT_ID"'"}' > .vercel/project.json
-          
-          mkdir -p .vercel/output/static
-          cp -r release/wwwroot/* .vercel/output/static/
-          
-          echo '{"version":3,"routes":[{"handle":"filesystem"},{"src":"/(.*)", "dest":"/index.html"}]}' > .vercel/output/config.json
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -53,7 +53,7 @@ jobs:
       - name: Deploy to Vercel
         run: |
           set -eo pipefail
-          vercel deploy --prebuilt --prod --token ${{ secrets.VERCEL_TOKEN }} --yes 2>&1 | tee deploy-output.txt
+          vercel deploy deploy --prod --token ${{ secrets.VERCEL_TOKEN }} --yes --team ${{ secrets.VERCEL_ORG_ID }} 2>&1 | tee deploy-output.txt
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
