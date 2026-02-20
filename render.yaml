@@ -17,4 +17,4 @@ services:
       - key: Jwt__Audience
         value: SexShopAPIUsers
       - key: ConnectionStrings__DefaultConnection
-        value: Data Source=/app/data/SexShop.db
+        sync: false   # <-- Pegas aqui el connection string de Neon.tech

@@ -17,12 +17,12 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     if (!string.IsNullOrEmpty(connectionString))
     {
-        // Si hay una cadena de conexión, usar SQLite (puedes cambiar a UseSqlServer aquí si prefieres)
-        options.UseSqlite(connectionString);
+        // PostgreSQL (Neon.tech en produccion, o cualquier Postgres local)
+        options.UseNpgsql(connectionString);
     }
     else
     {
-        // Fallback a In-Memory solo si no hay configuración
+        // Fallback a In-Memory solo si no hay cadena de conexion configurada
         options.UseInMemoryDatabase("SexShopDb");
     }
 });
@@ -112,14 +112,16 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Seed Data
+// Seed Data — aplica migraciones y siembra datos iniciales
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     try
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
-        context.Database.EnsureCreated(); // Create database if it doesn't exist
+        // MigrateAsync crea la BD si no existe y aplica migraciones pendientes
+        // Con InMemory este metodo no hace nada (es seguro llamarlo igual)
+        await context.Database.MigrateAsync();
         await DbSeeder.SeedRolesAndAdminAsync(services);
     }
     catch (Exception ex)
