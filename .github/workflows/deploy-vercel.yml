@@ -42,12 +42,27 @@ jobs:
           mkdir -p deploy
           cp -r release/wwwroot/* deploy/
           cp vercel.json deploy/
+          
+          # Explicitly link the project inside the deployment directory
+          mkdir -p deploy/.vercel
+          echo '{"orgId":"'"$VERCEL_ORG_ID"'","projectId":"'"$VERCEL_PROJECT_ID"'"}' > deploy/.vercel/project.json
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Vercel Diagnostics
+        run: |
+          echo "Checking Vercel account..."
+          vercel whoami --token ${{ secrets.VERCEL_TOKEN }}
+          echo "Checking accessible teams..."
+          vercel teams list --token ${{ secrets.VERCEL_TOKEN }}
+        continue-on-error: true
 
       - name: Deploy to Vercel
         run: |
           set -eo pipefail
-          # Vercel CLI will automatically use VERCEL_ORG_ID and VERCEL_PROJECT_ID from the env
-          vercel deploy --prod --token ${{ secrets.VERCEL_TOKEN }} --yes --cwd deploy 2>&1 | tee deploy-output.txt
+          # Use --cwd to specify the context and --scope for the Team ID
+          vercel deploy --prod --token ${{ secrets.VERCEL_TOKEN }} --yes --cwd deploy --scope ${{ secrets.VERCEL_ORG_ID }} 2>&1 | tee deploy-output.txt
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
