@@ -42,29 +42,33 @@ jobs:
           # Create .vercel directory with project link
           mkdir -p .vercel
           echo '{"orgId":"'"$VERCEL_ORG_ID"'","projectId":"'"$VERCEL_PROJECT_ID"'"}' > .vercel/project.json
-          cat .vercel/project.json
           
           # Build output structure
           mkdir -p .vercel/output/static
           cp -r release/wwwroot/* .vercel/output/static/
-          echo '{"version": 3}' > .vercel/output/config.json
           
-          echo "Files in output/static:"
+          # Create config with SPA routing (all paths -> index.html)
+          cat > .vercel/output/config.json << 'EOF'
+          {
+            "version": 3,
+            "routes": [
+              { "handle": "filesystem" },
+              { "src": "/(.*)", "dest": "/index.html" }
+            ]
+          }
+          EOF
+          
+          echo "=== config.json ==="
+          cat .vercel/output/config.json
+          echo ""
+          echo "=== Files in output/static ==="
           ls -la .vercel/output/static/ | head -20
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Deploy to Vercel
-        run: |
-          echo "=== project.json ==="
-          cat .vercel/project.json
-          echo ""
-          echo "=== output config ==="
-          cat .vercel/output/config.json
-          echo ""
-          echo "=== Starting deploy ==="
-          vercel deploy --prebuilt --prod --token ${{ secrets.VERCEL_TOKEN }} --yes --debug 2>&1 || echo "Deploy failed with exit code $?"
+        run: vercel deploy --prebuilt --prod --token ${{ secrets.VERCEL_TOKEN }} --yes
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
