@@ -26,10 +26,11 @@ jobs:
 
       - name: Link and Deploy to Vercel
         run: |
-          # Pull project configuration from Vercel
-          vercel pull --yes --environment=production --token ${{ secrets.VERCEL_TOKEN }}
+          # Create .vercel directory with project link (skip vercel pull)
+          mkdir -p .vercel
+          echo '{"orgId":"'"$VERCEL_ORG_ID"'","projectId":"'"$VERCEL_PROJECT_ID"'"}' > .vercel/project.json
           
-          # Build output structure
+          # Build output structure for prebuilt deployment
           mkdir -p .vercel/output/static
           cp -r release/wwwroot/* .vercel/output/static/
           echo '{"version": 3}' > .vercel/output/config.json
