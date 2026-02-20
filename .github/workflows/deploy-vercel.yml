@@ -43,9 +43,9 @@ jobs:
           cp -r release/wwwroot/* deploy/
           cp vercel.json deploy/
           
-          # Also create project.json in the current dir just in case
-          mkdir -p .vercel
-          echo '{"orgId":"'"$VERCEL_ORG_ID"'","projectId":"'"$VERCEL_PROJECT_ID"'"}' > .vercel/project.json
+          # Place project link INSIDE the deploy folder for the CLI to find it
+          mkdir -p deploy/.vercel
+          echo '{"orgId":"'"$VERCEL_ORG_ID"'","projectId":"'"$VERCEL_PROJECT_ID"'"}' > deploy/.vercel/project.json
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -53,7 +53,8 @@ jobs:
       - name: Deploy to Vercel
         run: |
           set -eo pipefail
-          vercel deploy deploy --prod --token ${{ secrets.VERCEL_TOKEN }} --yes --team ${{ secrets.VERCEL_ORG_ID }} 2>&1 | tee deploy-output.txt
+          # Use --cwd to specify the deployment directory and --scope for the Team ID
+          vercel deploy --prod --token ${{ secrets.VERCEL_TOKEN }} --yes --cwd deploy --scope ${{ secrets.VERCEL_ORG_ID }} 2>&1 | tee deploy-output.txt
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
