@@ -29,9 +29,7 @@ jobs:
           mkdir -p .vercel/output/static
           cp -r release/wwwroot/* .vercel/output/static/
           echo '{"version": 3}' > .vercel/output/config.json
-          cat > .vercel/project.json << 'EOF'
-          {"orgId":"team_NDOHsYL1wn16Mesz4AO2yQzg","projectId":"prj_kegr1jmBdL5HkZPGMHT4jReGFK9v"}
-          EOF
+          echo '{"orgId":"team_NDOHsYL1wn16Mesz4AO2yQzg","projectId":"prj_kegr1jmBdL5HkZPGMHT4jReGFK9v"}' > .vercel/project.json
           echo "=== project.json ==="
           cat .vercel/project.json
 
