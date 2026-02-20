@@ -24,6 +24,22 @@ jobs:
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
+      - name: List accessible Vercel projects
+        run: |
+          echo "=== Projects in team ==="
+          curl -s \
+            -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" \
+            "https://api.vercel.com/v9/projects?teamId=team_NDOHsYL1wn16Mesz4AO2yQzg&limit=10" \
+            | python3 -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          if 'projects' in data:
+              for p in data['projects']:
+                  print(f\"  Name: {p['name']}, ID: {p['id']}\")
+          else:
+              print(json.dumps(data, indent=2))
+          "
+
       - name: Prepare Vercel Build Output
         run: |
           mkdir -p .vercel/output/static
