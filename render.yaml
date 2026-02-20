@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: sexshop-api
+    env: docker
+    dockerfilePath: ./SexShopAPI/Dockerfile
+    # Render build desde la raiz del repo
+    dockerContext: .
+    plan: free
+    healthCheckPath: /swagger/index.html
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: Jwt__Key
+        sync: false   # <-- Lo ingresas manualmente en el dashboard de Render
+      - key: Jwt__Issuer
+        value: SexShopAPI
+      - key: Jwt__Audience
+        value: SexShopAPIUsers
+      - key: ConnectionStrings__DefaultConnection
+        value: Data Source=/app/data/SexShop.db
