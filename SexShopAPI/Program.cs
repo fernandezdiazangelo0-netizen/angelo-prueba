@@ -120,6 +120,8 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     try
     {
+        var context = services.GetRequiredService<ApplicationDbContext>();
+        context.Database.EnsureCreated(); // Create database if it doesn't exist
         await DbSeeder.SeedRolesAndAdminAsync(services);
     }
     catch (Exception ex)

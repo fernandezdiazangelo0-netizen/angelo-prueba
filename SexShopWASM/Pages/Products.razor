@@ -9,7 +9,18 @@
     <p class="lead text-muted mx-auto" style="max-width: 600px;">Indulge in our carefully selected range of premium products designed for your ultimate satisfaction.</p>
 </div>
 
-@if (products == null)
+@if (showError)
+{
+    <div class="alert alert-danger shadow-sm border-0 rounded-4 p-5 text-center glass animate-up">
+        <i class="bi bi-exclamation-triangle-fill display-3 text-danger mb-4"></i>
+        <h3 class="fw-bold text-dark mb-3">Unable to load products</h3>
+        <p class="text-muted mb-4">@errorMessage</p>
+        <button class="btn btn-primary rounded-pill px-5" @onclick="OnInitializedAsync">
+            <i class="bi bi-arrow-clockwise me-2"></i> Try Again
+        </button>
+    </div>
+}
+else if (products == null)
 {
     <div class="d-flex justify-content-center py-5">
         <div class="spinner-border text-primary" role="status">
@@ -83,10 +94,22 @@ else
 
 @code {
     private Product[]? products;
+    private bool showError = false;
+    private string errorMessage = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
-        products = await Http.GetFromJsonAsync<Product[]>("api/Products");
+        try
+        {
+            showError = false;
+            products = await Http.GetFromJsonAsync<Product[]>("api/Products");
+        }
+        catch (Exception ex)
+        {
+            showError = true;
+            errorMessage = "We couldn't fetch our products. Please check your connection or try again later.";
+            Console.WriteLine($"Error fetching products: {ex.Message}");
+        }
     }
 
     private async Task AddToCart(Product product)

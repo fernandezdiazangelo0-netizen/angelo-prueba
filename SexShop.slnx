@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="SexShopAPI/SexShopAPI.csproj" />
+  <Project Path="SexShopWASM/SexShopWASM.csproj" />
+</Solution>
