@@ -6,22 +6,22 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0 fw-bold">
                 <li class="nav-item">
-                    <a class="nav-link" href="#/products">Products</a>
+                    <NavLink class="nav-link" href="products">Products</NavLink>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#/products?category=lingerie">Lingerie &amp; Costumes</a>
+                    <a class="nav-link" href="products">Lingerie &amp; Costumes</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#/products?category=toys">Toys</a>
+                    <a class="nav-link" href="products">Toys</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#/products?category=bondage">Bondage</a>
+                    <a class="nav-link" href="products">Bondage</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#/products?category=lubricants">Lubricants</a>
+                    <a class="nav-link" href="products">Lubricants</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#/products?category=offers">Offers</a>
+                    <a class="nav-link" href="products">Offers</a>
                 </li>
                 <li class="nav-item ms-lg-3 border-start ps-lg-3">
                     <a class="nav-link text-muted" href="#"><i class="bi bi-info-circle me-1"></i> About</a>
@@ -33,9 +33,9 @@
              <ul class="navbar-nav ms-auto">
                 <AuthorizeView Roles="Admin">
                     <li class="nav-item">
-                        <a class="nav-link" href="#/admin-products">
+                        <NavLink class="nav-link" href="admin-products">
                             <i class="bi bi-gear-fill me-1"></i> Admin Panel
-                        </a>
+                        </NavLink>
                     </li>
                 </AuthorizeView>
             </ul>
