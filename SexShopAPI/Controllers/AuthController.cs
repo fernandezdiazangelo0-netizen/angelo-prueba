@@ -71,6 +71,21 @@ public class AuthController : ControllerBase
         }
     }
 
+    [HttpGet("diag")]
+    public IActionResult Diag()
+    {
+        var configuredKey = _configuration["Jwt:Key"];
+        var jwtKey = (string.IsNullOrEmpty(configuredKey) || configuredKey.Length < 32)
+            ? "SexShop@2025#SuperSecretKey$256BitMinimumLengthRequired!"
+            : configuredKey;
+
+        return Ok(new { 
+            configuredKeyLength = configuredKey?.Length ?? -1,
+            finalKeyLength = jwtKey.Length,
+            usingFallback = (string.IsNullOrEmpty(configuredKey) || configuredKey.Length < 32)
+        });
+    }
+
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterModel model)
     {
