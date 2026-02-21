@@ -47,7 +47,7 @@ jobs:
           
           # 2. Create the Vercel output configuration for SPA routing
           # This replaces the vercel.json for prebuilt deployments
-          echo '{"version":3,"routes":[{"src":"/(.*)","dest":"/index.html"}]}' > .vercel/output/config.json
+          echo '{"version":3,"routes":[{"handle":"filesystem"},{"src":"/(.*)","dest":"/index.html"}]}' > .vercel/output/config.json
           
           # 3. Link the project manually
           VERCEL_SCOPE="angelos-projects-ecf5b5b3"
