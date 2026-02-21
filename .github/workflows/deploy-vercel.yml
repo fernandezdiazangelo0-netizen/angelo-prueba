@@ -59,11 +59,12 @@ jobs:
           echo "{\"orgId\":\"$VERCEL_SCOPE\",\"projectId\":\"$VERCEL_PID\"}" > .vercel/project.json
           
           echo "Prebuilt structure ready."
+          ls -R .vercel/output
 
       - name: Deploy to Vercel
         run: |
           set -eo pipefail
-          # Adding --yes to bypass confirmation in CI
+          # Using explicit scope to match the linking step
           vercel deploy --prebuilt --prod --token ${{ secrets.VERCEL_TOKEN }} --scope angelos-projects-ecf5b5b3 --yes 2>&1 | tee deploy-output.txt
 
       - name: Display deploy logs on failure
