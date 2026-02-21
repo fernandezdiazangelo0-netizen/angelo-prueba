@@ -111,7 +111,8 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Seed Data — aplica migraciones y siembra datos iniciales
+// Seed Data — comentado temporalmente para diagnostico
+/*
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -138,5 +139,6 @@ using (var scope = app.Services.CreateScope())
         logger.LogError(ex, "An error occurred during DB initialization.");
     }
 }
+*/
 
 app.Run();
