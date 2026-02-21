@@ -1,4 +1,6 @@
-﻿<CascadingAuthenticationState>
+﻿@inject NavigationManager NavigationManager
+
+<CascadingAuthenticationState>
     <Router AppAssembly="@typeof(App).Assembly">
         <Found Context="routeData">
             <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
@@ -16,3 +18,27 @@
         </NotFound>
     </Router>
 </CascadingAuthenticationState>
+
+@code {
+    protected override void OnInitialized()
+    {
+        NavigationManager.LocationChanged += HandleLocationChanged;
+        CheckForHash();
+    }
+
+    private void HandleLocationChanged(object? sender, LocationChangedEventArgs e) => CheckForHash();
+
+    private void CheckForHash()
+    {
+        var fragment = new Uri(NavigationManager.Uri).Fragment;
+        if (fragment.StartsWith("#/"))
+        {
+            var targetPath = fragment.Substring(2);
+            // Evitar bucle infinito si ya estamos en esa ruta
+            if (NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Split('#')[0] != targetPath)
+            {
+                NavigationManager.NavigateTo(targetPath);
+            }
+        }
+    }
+}
