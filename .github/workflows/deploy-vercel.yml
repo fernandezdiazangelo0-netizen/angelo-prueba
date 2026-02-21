@@ -46,7 +46,7 @@ jobs:
           
           # Use verified IDs
           VERCEL_SCOPE="angelos-projects-ecf5b5b3"
-          VERCEL_PID="prj_kegri1jmBdL5HkZPGMHT4jReGFK9v"
+          VERCEL_PID="prj_kegr1jmBdL5HkZPGMHT4jReGFK9v"
           
           mkdir -p dist/.vercel
           echo "{\"orgId\":\"$VERCEL_SCOPE\",\"projectId\":\"$VERCEL_PID\"}" > dist/.vercel/project.json
