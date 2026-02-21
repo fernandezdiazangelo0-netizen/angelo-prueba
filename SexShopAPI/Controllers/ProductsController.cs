@@ -23,50 +23,7 @@ public class ProductsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
     {
-        try 
-        {
-            return await _context.Products.ToListAsync();
-        }
-        catch (Exception ex)
-        {
-            var conn = _config.GetConnectionString("DefaultConnection") ?? "MISSING";
-            var maskedConn = conn.Length > 15 ? conn.Substring(0, 15) + "..." : conn;
-            return StatusCode(500, new { error = ex.Message, detail = ex.InnerException?.Message, connectionUsed = maskedConn });
-        }
-    }
-
-    // GET: api/Products/ping
-    [HttpGet("ping")]
-    public IActionResult Ping([FromServices] IConfiguration config)
-    {
-        var conn = config.GetConnectionString("DefaultConnection") ?? "MISSING";
-        
-        // Diagnostics for connection string type
-        string dbType = "Unknown";
-        if (conn.StartsWith("Data Source=") || conn.Contains("Server=") && conn.Contains("Database="))
-        {
-            dbType = "SQL Server";
-        }
-        else if (conn.StartsWith("Host=") || conn.StartsWith("Server=") && conn.Contains("Port=") && conn.Contains("Database="))
-        {
-            dbType = "PostgreSQL";
-        }
-        else if (conn.StartsWith("Filename="))
-        {
-            dbType = "SQLite";
-        }
-        else if (conn.StartsWith("postgresql://") || conn.StartsWith("postgres://"))
-        {
-            dbType = "PostgreSQL (URI)";
-        }
-
-        return Ok(new { 
-            status = "API is reachable", 
-            connPrefix = conn.Length > 10 ? conn.Substring(0, 10) : conn,
-            connLength = conn.Length,
-            dbType = dbType, // Added diagnostic
-            timestamp = DateTime.UtcNow 
-        });
+        return await _context.Products.ToListAsync();
     }
 
     // GET: api/Products/5
