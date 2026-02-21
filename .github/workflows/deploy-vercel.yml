@@ -37,31 +37,24 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
-      - name: Prepare and Build with Vercel CLI
+      - name: Prepare 404.html fallback
         run: |
-          # 1. Enter the built folder
-          cd release/wwwroot
+          # The most reliable way for SPA on static hosts:
+          # Copy index.html to 404.html. Vercel will serve it for any unknown route.
+          cp release/wwwroot/index.html release/wwwroot/404.html
           
-          # 2. Create a dummy package.json to help Vercel CLI identify the project type
-          echo '{"name":"sexshop-wasm","version":"1.0.0","scripts":{"build":"echo ok"}}' > package.json
-          
-          # 3. Create vercel.json with SPA routing rules
-          echo '{"version":2,"cleanUrls":true,"trailingSlash":false,"rewrites":[{"source":"/(.*)","destination":"/index.html"}]}' > vercel.json
-          
-          # 4. Link the project (using the IDs we verified)
+          # We also keep the project link
           mkdir -p .vercel
           echo "{\"orgId\":\"angelos-projects-ecf5b5b3\",\"projectId\":\"prj_kegr1jmBdL5HkZPGMHT4jReGFK9v\"}" > .vercel/project.json
           
-          # 5. Run vercel build to generate the official .vercel/output structure
-          # This will convert vercel.json to the correct config.json and prepare the static files
-          vercel build --prod --token ${{ secrets.VERCEL_TOKEN }} --yes
-          
+          echo "Fallback prepared."
+          ls -l release/wwwroot/404.html
+
       - name: Deploy to Vercel
         run: |
           set -eo pipefail
-          # 6. Deploy the generated output using the --prebuilt flag
-          cd release/wwwroot
-          vercel deploy --prebuilt --prod --token ${{ secrets.VERCEL_TOKEN }} --yes 2>&1 | tee deploy-output.txt
+          # Deploying with --prod and using the project link
+          vercel deploy release/wwwroot --prod --token ${{ secrets.VERCEL_TOKEN }} --scope angelos-projects-ecf5b5b3 --yes 2>&1 | tee deploy-output.txt
 
       - name: Display deploy logs on failure
         if: failure()
