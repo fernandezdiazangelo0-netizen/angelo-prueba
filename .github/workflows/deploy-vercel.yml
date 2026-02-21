@@ -39,23 +39,24 @@ jobs:
 
       - name: Prepare deployment folder
         run: |
-          mkdir -p deploy
-          cp -r release/wwwroot/* deploy/
-          cp vercel.json deploy/
+          # Rename folder to match official project name
+          mkdir -p angelo-prueba
+          cp -r release/wwwroot/* angelo-prueba/
+          cp vercel.json angelo-prueba/
           
-          # Use the verified IDs from diagnostics
+          # Use verified IDs
           VERCEL_SCOPE="angelos-projects-ecf5b5b3"
           VERCEL_PID="prj_kegri1jmBdL5HkZPGMHT4jReGFK9v"
           
-          mkdir -p deploy/.vercel
-          echo "{\"orgId\":\"$VERCEL_SCOPE\",\"projectId\":\"$VERCEL_PID\"}" > deploy/.vercel/project.json
-          echo "Project linked to scope: $VERCEL_SCOPE"
+          mkdir -p angelo-prueba/.vercel
+          echo "{\"orgId\":\"$VERCEL_SCOPE\",\"projectId\":\"$VERCEL_PID\"}" > angelo-prueba/.vercel/project.json
+          echo "Project linked to project: angelo-prueba with scope: $VERCEL_SCOPE"
 
       - name: Deploy to Vercel
         run: |
           set -eo pipefail
-          # Using --debug to see why the alias might not be updating
-          vercel deploy --prod --token ${{ secrets.VERCEL_TOKEN }} --yes --cwd deploy --scope angelos-projects-ecf5b5b3 --debug 2>&1 | tee deploy-output.txt
+          # Deploying from the 'angelo-prueba' folder to ensure correct aliasing
+          vercel deploy --prod --token ${{ secrets.VERCEL_TOKEN }} --yes --cwd angelo-prueba --scope angelos-projects-ecf5b5b3 --debug 2>&1 | tee deploy-output.txt
 
       - name: Display deploy logs on failure
         if: failure()
