@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using SexShopWASM.Auth;
 using SexShopWASM.Models;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace SexShopWASM.Services;
 
@@ -16,49 +17,82 @@ public interface IAuthService
 public class AuthService : IAuthService
 {
     private readonly HttpClient _httpClient;
-    private readonly AuthenticationStateProvider _authenticationStateProvider;
+    private readonly CustomAuthStateProvider _authStateProvider;
     private readonly ILocalStorageService _localStorage;
+
+    private static readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
 
     public AuthService(HttpClient httpClient,
                        AuthenticationStateProvider authenticationStateProvider,
                        ILocalStorageService localStorage)
     {
         _httpClient = httpClient;
-        _authenticationStateProvider = authenticationStateProvider;
+        _authStateProvider = (CustomAuthStateProvider)authenticationStateProvider;
         _localStorage = localStorage;
     }
 
     public async Task<AuthResponse?> Login(LoginModel loginModel)
     {
-        var result = await _httpClient.PostAsJsonAsync("api/auth/login", loginModel);
-
-        if (result.IsSuccessStatusCode)
+        try
         {
-            var response = await result.Content.ReadFromJsonAsync<AuthResponse>();
-            await _localStorage.SetItemAsync("authToken", response!.Token);
-            await ((CustomAuthStateProvider)_authenticationStateProvider).GetAuthenticationStateAsync(); // Trigger state change
-            return response;
-        }
+            var result = await _httpClient.PostAsJsonAsync("api/auth/login", loginModel);
 
-        return null;
+            if (result.IsSuccessStatusCode)
+            {
+                var json = await result.Content.ReadAsStringAsync();
+                var response = JsonSerializer.Deserialize<AuthResponse>(json, _jsonOptions);
+
+                if (response != null && !string.IsNullOrEmpty(response.Token))
+                {
+                    await _localStorage.SetItemAsStringAsync("authToken", response.Token);
+                    _authStateProvider.MarkUserAsAuthenticated(response.Token);
+                    return response;
+                }
+            }
+
+            Console.WriteLine($"Login failed: {result.StatusCode}");
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Login exception: {ex.Message}");
+            return null;
+        }
     }
 
     public async Task<RegisterResult> Register(RegisterModel registerModel)
     {
-        var result = await _httpClient.PostAsJsonAsync("api/auth/register", registerModel);
-        if (result.IsSuccessStatusCode)
+        try
         {
-            return new RegisterResult { Successful = true };
+            var result = await _httpClient.PostAsJsonAsync("api/auth/register", registerModel);
+            if (result.IsSuccessStatusCode)
+            {
+                return new RegisterResult { Successful = true };
+            }
+
+            var errorContent = await result.Content.ReadAsStringAsync();
+            return new RegisterResult
+            {
+                Successful = false,
+                Errors = new[] { $"Registration failed: {result.ReasonPhrase}. {errorContent}" }
+            };
         }
-        
-        // Try to read error details if available, otherwise generic error
-        var errorContent = await result.Content.ReadAsStringAsync();
-        return new RegisterResult { Successful = false, Errors = new[] { $"Registration failed: {result.ReasonPhrase} - {errorContent}" } };
+        catch (Exception ex)
+        {
+            return new RegisterResult
+            {
+                Successful = false,
+                Errors = new[] { $"Connection error: {ex.Message}" }
+            };
+        }
     }
 
     public async Task Logout()
     {
         await _localStorage.RemoveItemAsync("authToken");
-        await ((CustomAuthStateProvider)_authenticationStateProvider).GetAuthenticationStateAsync();
+        _authStateProvider.MarkUserAsLoggedOut();
     }
 }

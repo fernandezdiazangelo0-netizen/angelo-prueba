@@ -10,6 +10,7 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
 {
     private readonly ILocalStorageService _localStorage;
     private readonly HttpClient _http;
+    private AuthenticationState _anonymous => new(new ClaimsPrincipal(new ClaimsIdentity()));
 
     public CustomAuthStateProvider(ILocalStorageService localStorage, HttpClient http)
     {
@@ -19,82 +20,111 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
 
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
-        var identity = new ClaimsIdentity();
-        _http.DefaultRequestHeaders.Authorization = null;
-
         try
         {
-            string token = await _localStorage.GetItemAsStringAsync("authToken");
-            if (!string.IsNullOrEmpty(token))
+            string? token = await _localStorage.GetItemAsStringAsync("authToken");
+
+            if (string.IsNullOrEmpty(token))
             {
-                // Remove quotes if present
-                token = token.Trim('"');
-                
-                var claims = ParseClaimsFromJwt(token);
-                if (claims != null && claims.Any())
+                _http.DefaultRequestHeaders.Authorization = null;
+                return _anonymous;
+            }
+
+            token = token.Trim('"');
+
+            var claims = ParseClaimsFromJwt(token);
+            if (claims == null || !claims.Any())
+            {
+                _http.DefaultRequestHeaders.Authorization = null;
+                return _anonymous;
+            }
+
+            // Check if token is expired
+            var expClaim = claims.FirstOrDefault(c => c.Type == "exp");
+            if (expClaim != null && long.TryParse(expClaim.Value, out long exp))
+            {
+                var expDate = DateTimeOffset.FromUnixTimeSeconds(exp);
+                if (expDate < DateTimeOffset.UtcNow)
                 {
-                    identity = new ClaimsIdentity(claims, "jwt");
-                    _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                    await _localStorage.RemoveItemAsync("authToken");
+                    _http.DefaultRequestHeaders.Authorization = null;
+                    return _anonymous;
                 }
             }
+
+            _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            var identity = new ClaimsIdentity(claims, "jwt");
+            var user = new ClaimsPrincipal(identity);
+            return new AuthenticationState(user);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Auth state error: {ex.Message}");
-            try 
-            {
-                await _localStorage.RemoveItemAsync("authToken");
-            }
-            catch { /* Ignore storage removal errors */ }
+            return _anonymous;
         }
+    }
 
-        var user = new ClaimsPrincipal(identity);
-        var state = new AuthenticationState(user);
+    /// <summary>Call this immediately after a successful login to update UI without a page reload.</summary>
+    public void MarkUserAsAuthenticated(string token)
+    {
+        try
+        {
+            token = token.Trim('"');
+            var claims = ParseClaimsFromJwt(token);
+            var identity = (claims != null && claims.Any())
+                ? new ClaimsIdentity(claims, "jwt")
+                : new ClaimsIdentity();
 
-        NotifyAuthenticationStateChanged(Task.FromResult(state));
+            _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            var user = new ClaimsPrincipal(identity);
+            NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(user)));
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"MarkUserAsAuthenticated error: {ex.Message}");
+        }
+    }
 
-        return state;
+    /// <summary>Call this on logout to clear the auth state immediately.</summary>
+    public void MarkUserAsLoggedOut()
+    {
+        _http.DefaultRequestHeaders.Authorization = null;
+        NotifyAuthenticationStateChanged(Task.FromResult(_anonymous));
     }
 
     public static IEnumerable<Claim> ParseClaimsFromJwt(string jwt)
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(jwt) || !jwt.Contains('.')) return Enumerable.Empty<Claim>();
+            if (string.IsNullOrWhiteSpace(jwt) || !jwt.Contains('.'))
+                return Enumerable.Empty<Claim>();
 
             var parts = jwt.Split('.');
-            if (parts.Length < 2) return Enumerable.Empty<Claim>();
+            if (parts.Length < 2)
+                return Enumerable.Empty<Claim>();
 
             var payload = parts[1];
             var jsonBytes = ParseBase64WithoutPadding(payload);
-            var keyValuePairs = JsonSerializer.Deserialize<Dictionary<string, object>>(jsonBytes);
+            var keyValuePairs = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(jsonBytes);
 
             var claims = new List<Claim>();
 
             if (keyValuePairs != null)
             {
-                if (keyValuePairs.TryGetValue(ClaimTypes.Role, out object? roles) && roles != null)
+                foreach (var kvp in keyValuePairs)
                 {
-                    var rolesStr = roles.ToString();
-                    if (!string.IsNullOrEmpty(rolesStr))
+                    if (kvp.Value.ValueKind == JsonValueKind.Array)
                     {
-                        if (rolesStr.Trim().StartsWith("["))
+                        foreach (var item in kvp.Value.EnumerateArray())
                         {
-                            var parsedRoles = JsonSerializer.Deserialize<string[]>(rolesStr);
-                            if (parsedRoles != null)
-                            {
-                                claims.AddRange(parsedRoles.Select(r => new Claim(ClaimTypes.Role, r)));
-                            }
-                        }
-                        else
-                        {
-                            claims.Add(new Claim(ClaimTypes.Role, rolesStr));
+                            claims.Add(new Claim(kvp.Key, item.GetString() ?? ""));
                         }
                     }
-                    keyValuePairs.Remove(ClaimTypes.Role);
+                    else
+                    {
+                        claims.Add(new Claim(kvp.Key, kvp.Value.ToString()));
+                    }
                 }
-
-                claims.AddRange(keyValuePairs.Select(kvp => new Claim(kvp.Key, kvp.Value?.ToString() ?? "")));
             }
 
             return claims;
@@ -108,10 +138,12 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
 
     private static byte[] ParseBase64WithoutPadding(string base64)
     {
+        // Replace URL-safe chars
+        base64 = base64.Replace('-', '+').Replace('_', '/');
         switch (base64.Length % 4)
         {
             case 2: base64 += "=="; break;
-            case 3: base64 += "="; break;
+            case 3: base64 += "=";  break;
         }
         return Convert.FromBase64String(base64);
     }
