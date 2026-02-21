@@ -39,12 +39,19 @@ jobs:
 
       - name: Prepare static deployment with vercel.json
         run: |
-          # Create a vercel.json inside the folder we are going to deploy
-          # This ensures SPA routing is applied correctly
+          # The CLI needs the .vercel folder inside the deployment directory to recognize the project
+          mkdir -p .vercel
+          echo "{\"orgId\":\"angelos-projects-ecf5b5b3\",\"projectId\":\"prj_kegr1jmBdL5HkZPGMHT4jReGFK9v\"}" > .vercel/project.json
+          
+          # Copy it into the wwwroot folder we are deploying
+          mkdir -p release/wwwroot/.vercel
+          cp .vercel/project.json release/wwwroot/.vercel/project.json
+          
+          # Create a clean vercel.json inside wwwroot for SPA routing
           echo '{"version":2,"cleanUrls":true,"trailingSlash":false,"rewrites":[{"source":"/(.*)","destination":"/index.html"}]}' > release/wwwroot/vercel.json
           
-          echo "Static folder prepared for deployment."
-          ls -R release/wwwroot
+          echo "Static folder prepared with project link and routing rules."
+          ls -R release/wwwroot/.vercel
 
       - name: Deploy to Vercel
         run: |
