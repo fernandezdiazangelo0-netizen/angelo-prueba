@@ -60,8 +60,8 @@ jobs:
       - name: Deploy to Vercel
         run: |
           set -eo pipefail
-          # Using --prebuilt to skip Vercel's cloud build step entirely
-          vercel deploy --prebuilt --prod --token ${{ secrets.VERCEL_TOKEN }} --scope angelos-projects-ecf5b5b3 2>&1 | tee deploy-output.txt
+          # Adding --yes to bypass confirmation in CI
+          vercel deploy --prebuilt --prod --token ${{ secrets.VERCEL_TOKEN }} --scope angelos-projects-ecf5b5b3 --yes 2>&1 | tee deploy-output.txt
 
       - name: Display deploy logs on failure
         if: failure()
