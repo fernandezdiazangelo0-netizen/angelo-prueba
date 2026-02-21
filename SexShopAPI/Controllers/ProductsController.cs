@@ -11,10 +11,12 @@ namespace SexShopAPI.Controllers;
 public class ProductsController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
+    private readonly IConfiguration _config;
 
-    public ProductsController(ApplicationDbContext context)
+    public ProductsController(ApplicationDbContext context, IConfiguration config)
     {
         _context = context;
+        _config = config;
     }
 
     // GET: api/Products
@@ -27,7 +29,9 @@ public class ProductsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { error = ex.Message, detail = ex.InnerException?.Message });
+            var conn = _config.GetConnectionString("DefaultConnection") ?? "MISSING";
+            var maskedConn = conn.Length > 15 ? conn.Substring(0, 15) + "..." : conn;
+            return StatusCode(500, new { error = ex.Message, detail = ex.InnerException?.Message, connectionUsed = maskedConn });
         }
     }
 
@@ -36,10 +40,31 @@ public class ProductsController : ControllerBase
     public IActionResult Ping([FromServices] IConfiguration config)
     {
         var conn = config.GetConnectionString("DefaultConnection") ?? "MISSING";
+        
+        // Diagnostics for connection string type
+        string dbType = "Unknown";
+        if (conn.StartsWith("Data Source=") || conn.Contains("Server=") && conn.Contains("Database="))
+        {
+            dbType = "SQL Server";
+        }
+        else if (conn.StartsWith("Host=") || conn.StartsWith("Server=") && conn.Contains("Port=") && conn.Contains("Database="))
+        {
+            dbType = "PostgreSQL";
+        }
+        else if (conn.StartsWith("Filename="))
+        {
+            dbType = "SQLite";
+        }
+        else if (conn.StartsWith("postgresql://") || conn.StartsWith("postgres://"))
+        {
+            dbType = "PostgreSQL (URI)";
+        }
+
         return Ok(new { 
             status = "API is reachable", 
             connPrefix = conn.Length > 10 ? conn.Substring(0, 10) : conn,
             connLength = conn.Length,
+            dbType = dbType, // Added diagnostic
             timestamp = DateTime.UtcNow 
         });
     }
