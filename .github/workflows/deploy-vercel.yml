@@ -37,28 +37,31 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
-      - name: Prepare static deployment with vercel.json
+      - name: Prepare and Build with Vercel CLI
         run: |
-          # The CLI needs the .vercel folder inside the deployment directory to recognize the project
+          # 1. Enter the built folder
+          cd release/wwwroot
+          
+          # 2. Create a dummy package.json to help Vercel CLI identify the project type
+          echo '{"name":"sexshop-wasm","version":"1.0.0","scripts":{"build":"echo ok"}}' > package.json
+          
+          # 3. Create vercel.json with SPA routing rules
+          echo '{"version":2,"cleanUrls":true,"trailingSlash":false,"rewrites":[{"source":"/(.*)","destination":"/index.html"}]}' > vercel.json
+          
+          # 4. Link the project (using the IDs we verified)
           mkdir -p .vercel
           echo "{\"orgId\":\"angelos-projects-ecf5b5b3\",\"projectId\":\"prj_kegr1jmBdL5HkZPGMHT4jReGFK9v\"}" > .vercel/project.json
           
-          # Copy it into the wwwroot folder we are deploying
-          mkdir -p release/wwwroot/.vercel
-          cp .vercel/project.json release/wwwroot/.vercel/project.json
+          # 5. Run vercel build to generate the official .vercel/output structure
+          # This will convert vercel.json to the correct config.json and prepare the static files
+          vercel build --prod --token ${{ secrets.VERCEL_TOKEN }} --yes
           
-          # Create a clean vercel.json inside wwwroot for SPA routing
-          echo '{"version":2,"cleanUrls":true,"trailingSlash":false,"rewrites":[{"source":"/(.*)","destination":"/index.html"}]}' > release/wwwroot/vercel.json
-          
-          echo "Static folder prepared with project link and routing rules."
-          ls -R release/wwwroot/.vercel
-
       - name: Deploy to Vercel
         run: |
           set -eo pipefail
-          # Deploy the specific wwwroot folder directly
-          # Using --prod and providing the scope/token
-          vercel deploy release/wwwroot --prod --token ${{ secrets.VERCEL_TOKEN }} --scope angelos-projects-ecf5b5b3 --yes 2>&1 | tee deploy-output.txt
+          # 6. Deploy the generated output using the --prebuilt flag
+          cd release/wwwroot
+          vercel deploy --prebuilt --prod --token ${{ secrets.VERCEL_TOKEN }} --yes 2>&1 | tee deploy-output.txt
 
       - name: Display deploy logs on failure
         if: failure()
