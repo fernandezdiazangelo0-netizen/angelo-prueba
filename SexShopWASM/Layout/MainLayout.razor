@@ -14,8 +14,12 @@
                 <!-- Search Bar -->
                 <div class="flex-grow-1 mx-4 d-none d-md-block">
                     <div class="input-group">
-                        <input type="text" class="form-control border-end-0" placeholder="What are you looking for?">
-                        <button class="btn btn-primary text-white" type="button">
+                        <input type="text" class="form-control border-end-0"
+                               placeholder="What are you looking for?"
+                               @bind-value="headerSearch"
+                               @bind-value:event="oninput"
+                               @onkeydown="HandleSearchKey" />
+                        <button class="btn btn-primary text-white" type="button" @onclick="DoSearch">
                             <i class="bi bi-search"></i>
                         </button>
                     </div>
@@ -98,6 +102,8 @@
 @implements IDisposable
 
 @code {
+    private string headerSearch = string.Empty;
+
     protected override void OnInitialized()
     {
         CartService.OnChange += StateHasChanged;
@@ -106,6 +112,20 @@
     public void Dispose()
     {
         CartService.OnChange -= StateHasChanged;
+    }
+
+    private void HandleSearchKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") DoSearch();
+    }
+
+    private void DoSearch()
+    {
+        if (!string.IsNullOrWhiteSpace(headerSearch))
+        {
+            NavigationManager.NavigateTo($"products?search={Uri.EscapeDataString(headerSearch)}");
+            headerSearch = string.Empty;
+        }
     }
 
     private async Task Logout()

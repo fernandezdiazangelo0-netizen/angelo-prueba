@@ -142,7 +142,6 @@
         try
         {
             isLoading = true;
-            hasError = false;
             cartItems = await CartService.GetItems();
             CartService.OnChange += HandleCartChanged;
         }
@@ -150,7 +149,6 @@
         {
             Console.WriteLine($"Cart load error: {ex.Message}");
             cartItems = new List<CartItem>();
-            hasError = false; // Still show empty cart rather than error
         }
         finally
         {

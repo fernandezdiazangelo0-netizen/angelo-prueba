@@ -4,9 +4,29 @@
 @inject SexShopWASM.Services.ICartService CartService
 @using SexShopWASM.Models
 
-<div class="products-header text-center py-5 mb-5 glass animate-up" style="border-radius: 20px;">
+<PageTitle>Products – SexShop</PageTitle>
+
+<!-- Header -->
+<div class="products-header text-center py-5 mb-4 glass animate-up" style="border-radius: 20px;">
     <h2 class="display-4 fw-bold text-primary mb-3">Exquisite Collection</h2>
     <p class="lead text-muted mx-auto" style="max-width: 600px;">Indulge in our carefully selected range of premium products designed for your ultimate satisfaction.</p>
+
+    <!-- Search Bar -->
+    <div class="mx-auto mt-4" style="max-width: 480px;">
+        <div class="input-group shadow-sm">
+            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" class="form-control border-start-0 ps-0 py-2"
+                   placeholder="Search products..."
+                   @bind-value="searchTerm"
+                   @bind-value:event="oninput" />
+            @if (!string.IsNullOrEmpty(searchTerm))
+            {
+                <button class="btn btn-outline-secondary border-start-0" @onclick="() => searchTerm = string.Empty">
+                    <i class="bi bi-x"></i>
+                </button>
+            }
+        </div>
+    </div>
 </div>
 
 @if (showError)
@@ -30,42 +50,146 @@ else if (products == null)
 }
 else
 {
-    <div class="container pb-5">
-        <div class="row row-cols-1 row-cols-md-3 g-5">
-            @foreach (var product in products)
-            {
-                <div class="col">
-                    <div class="card h-100 product-card shadow-sm overflow-hidden">
-                        <div class="position-relative overflow-hidden" style="height: 350px;">
-                            <img src="@(string.IsNullOrEmpty(product.ImageUrl) ? "https://placehold.co/300x400?text=No+Image" : product.ImageUrl)" 
-                                 class="card-img-top w-100 h-100" alt="@product.Name" 
-                                 style="object-fit: cover; transition: transform 0.8s cubic-bezier(0.2, 1, 0.22, 1);">
-                            <div class="product-overlay">
-                                <button class="btn btn-primary rounded-pill shadow px-4 py-2" @onclick="() => AddToCart(product)">
-                                    <i class="bi bi-cart-plus me-2"></i> Add to Cart
-                                </button>
+    <!-- Category Filter Buttons -->
+    <div class="d-flex flex-wrap justify-content-center gap-2 mb-5">
+        <button class="btn @(selectedCategory == null ? "btn-primary" : "btn-outline-primary") rounded-pill px-4"
+                @onclick="() => selectedCategory = null">
+            <i class="bi bi-grid me-1"></i> All
+        </button>
+        @foreach (var cat in AllCategories)
+        {
+            var catCapture = cat;
+            <button class="btn @(selectedCategory == catCapture ? "btn-primary" : "btn-outline-primary") rounded-pill px-4"
+                    @onclick="() => selectedCategory = catCapture">
+                @catCapture
+            </button>
+        }
+    </div>
+
+    <!-- Results count -->
+    <div class="mb-3 text-muted small ps-1">
+        <i class="bi bi-funnel me-1"></i>
+        Showing <strong>@FilteredProducts.Count()</strong> of <strong>@products.Length</strong> products
+        @if (!string.IsNullOrEmpty(searchTerm))
+        {
+            <span> for "<strong>@searchTerm</strong>"</span>
+        }
+        @if (selectedCategory != null)
+        {
+            <span> in <strong>@selectedCategory</strong></span>
+        }
+    </div>
+
+    @if (!FilteredProducts.Any())
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-search display-1 text-muted"></i>
+            <h4 class="mt-3 text-muted">No products found</h4>
+            <p class="text-muted">Try a different search or category.</p>
+            <button class="btn btn-outline-primary rounded-pill px-4 mt-2" @onclick="ClearFilters">
+                Clear Filters
+            </button>
+        </div>
+    }
+    else
+    {
+        <div class="container pb-5">
+            <div class="row row-cols-1 row-cols-md-3 g-5">
+                @foreach (var product in FilteredProducts)
+                {
+                    var p = product;
+                    <div class="col">
+                        <div class="card h-100 product-card shadow-sm overflow-hidden" @onclick="() => OpenModal(p)" style="cursor:pointer;">
+                            <div class="position-relative overflow-hidden" style="height: 320px;">
+                                <img src="@(string.IsNullOrEmpty(p.ImageUrl) ? "https://placehold.co/300x400?text=No+Image" : p.ImageUrl)"
+                                     class="card-img-top w-100 h-100" alt="@p.Name"
+                                     style="object-fit: cover; transition: transform 0.8s cubic-bezier(0.2, 1, 0.22, 1);">
+                                <div class="product-overlay">
+                                    <div class="d-flex flex-column gap-2">
+                                        <button class="btn btn-primary rounded-pill shadow px-4 py-2"
+                                                @onclick:stopPropagation="true"
+                                                @onclick="() => AddToCart(p)">
+                                            <i class="bi bi-cart-plus me-2"></i> Add to Cart
+                                        </button>
+                                        <button class="btn btn-outline-light rounded-pill px-4 py-2"
+                                                @onclick:stopPropagation="true"
+                                                @onclick="() => OpenModal(p)">
+                                            <i class="bi bi-eye me-2"></i> Quick View
+                                        </button>
+                                    </div>
+                                </div>
+                                <span class="badge position-absolute top-0 end-0 m-3 px-3 py-2 bg-white text-primary rounded-pill shadow-sm small fw-bold">
+                                    @p.Category
+                                </span>
                             </div>
-                            <span class="badge position-absolute top-0 end-0 m-3 px-3 py-2 bg-white text-primary rounded-pill shadow-sm small fw-bold">
-                                @product.Category
-                            </span>
-                        </div>
-                        <div class="card-body p-4 text-center">
-                            <h5 class="card-title fw-bold mb-2">@product.Name</h5>
-                            <p class="card-text text-muted small mb-3">@product.Description</p>
-                            <div class="d-flex justify-content-center align-items-center gap-3">
-                                <span class="h4 mb-0 text-primary fw-bold">$@product.Price</span>
-                                <button class="btn btn-outline-primary btn-sm rounded-pill px-4" @onclick="() => AddToCart(product)">
-                                    Quick Buy
-                                </button>
+                            <div class="card-body p-4 text-center">
+                                <h5 class="card-title fw-bold mb-2">@p.Name</h5>
+                                <p class="card-text text-muted small mb-3" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">@p.Description</p>
+                                <div class="d-flex justify-content-center align-items-center gap-3">
+                                    <span class="h4 mb-0 text-primary fw-bold">$@p.Price.ToString("0.00")</span>
+                                    <button class="btn btn-outline-primary btn-sm rounded-pill px-4"
+                                            @onclick:stopPropagation="true"
+                                            @onclick="() => AddToCart(p)">
+                                        Quick Buy
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
+                }
+            </div>
+        </div>
+    }
+}
+
+<!-- Product Detail Modal -->
+@if (modalProduct != null)
+{
+    <div class="modal-backdrop-custom" @onclick="CloseModal"></div>
+    <div class="modal-custom animate-up">
+        <div class="modal-custom-dialog">
+            <button class="btn-close-custom" @onclick="CloseModal">
+                <i class="bi bi-x-lg"></i>
+            </button>
+            <div class="row g-0">
+                <div class="col-md-5">
+                    <img src="@(string.IsNullOrEmpty(modalProduct.ImageUrl) ? "https://placehold.co/500x600?text=No+Image" : modalProduct.ImageUrl)"
+                         class="w-100 h-100" alt="@modalProduct.Name"
+                         style="object-fit: cover; border-radius: 20px 0 0 20px; min-height: 400px;" />
                 </div>
-            }
+                <div class="col-md-7 p-5 d-flex flex-column justify-content-between">
+                    <div>
+                        <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2 mb-3">@modalProduct.Category</span>
+                        <h2 class="fw-bold mb-3">@modalProduct.Name</h2>
+                        <p class="text-muted mb-4" style="line-height: 1.8;">@modalProduct.Description</p>
+                        <hr />
+                        <div class="d-flex align-items-center justify-content-between mb-4 mt-3">
+                            <span class="display-6 fw-bold text-primary">$@modalProduct.Price.ToString("0.00")</span>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-success rounded-pill px-3 py-2">
+                                    <i class="bi bi-check-circle me-1"></i> In Stock
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-column gap-3">
+                        <button class="btn btn-primary btn-lg rounded-pill shadow w-100 py-3 fw-bold"
+                                @onclick="() => AddToCartFromModal(modalProduct)">
+                            <i class="bi bi-cart-plus me-2"></i> Add to Cart
+                        </button>
+                        <div class="d-flex gap-2 text-muted small justify-content-center">
+                            <span><i class="bi bi-shield-check me-1 text-success"></i> Secure payment</span>
+                            <span>•</span>
+                            <span><i class="bi bi-box-seam me-1 text-primary"></i> Discreet shipping</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 }
 
+<!-- Toast Notification -->
 @if (!string.IsNullOrEmpty(cartToast))
 {
     <div class="position-fixed bottom-0 end-0 m-4 p-3 bg-dark text-white rounded-pill shadow-lg animate-up" style="z-index:9999; font-size:0.9rem;">
@@ -76,27 +200,60 @@ else
 <style>
     .product-card {
         border: 1px solid rgba(0,0,0,0.05);
+        border-radius: 16px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
-    .product-card:hover img {
-        transform: scale(1.1);
+    .product-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 12px 40px rgba(136, 14, 79, 0.12) !important;
     }
+    .product-card:hover img { transform: scale(1.08); }
     .product-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.3);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        opacity: 0;
-        transition: all 0.4s ease;
+        position: absolute; top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(0,0,0,0.35);
+        display: flex; align-items: center; justify-content: center;
+        opacity: 0; transition: all 0.4s ease;
         backdrop-filter: blur(2px);
     }
-    .product-card:hover .product-overlay {
-        opacity: 1;
+    .product-card:hover .product-overlay { opacity: 1; }
+
+    /* Modal */
+    .modal-backdrop-custom {
+        position: fixed; inset: 0;
+        background: rgba(0,0,0,0.6);
+        backdrop-filter: blur(4px);
+        z-index: 1050;
     }
+    .modal-custom {
+        position: fixed; inset: 0;
+        z-index: 1060;
+        display: flex; align-items: center; justify-content: center;
+        padding: 1rem;
+    }
+    .modal-custom-dialog {
+        background: white;
+        border-radius: 20px;
+        max-width: 850px;
+        width: 100%;
+        max-height: 90vh;
+        overflow: auto;
+        position: relative;
+        box-shadow: 0 30px 80px rgba(0,0,0,0.3);
+    }
+    .btn-close-custom {
+        position: absolute;
+        top: 1rem; right: 1rem;
+        background: rgba(0,0,0,0.08);
+        border: none;
+        border-radius: 50%;
+        width: 38px; height: 38px;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer;
+        z-index: 10;
+        transition: background 0.2s;
+    }
+    .btn-close-custom:hover { background: rgba(0,0,0,0.15); }
 </style>
 
 @code {
@@ -104,10 +261,55 @@ else
     private bool showError = false;
     private string errorMessage = string.Empty;
     private string? cartToast;
+    private string? selectedCategory;
+    private string searchTerm = string.Empty;
+    private Product? modalProduct;
+
+    private IEnumerable<string> AllCategories =>
+        products?.Select(p => p.Category).Where(c => !string.IsNullOrEmpty(c)).Distinct().OrderBy(c => c) ?? Enumerable.Empty<string>();
+
+    private IEnumerable<Product> FilteredProducts
+    {
+        get
+        {
+            var result = products?.AsEnumerable() ?? Enumerable.Empty<Product>();
+            if (!string.IsNullOrWhiteSpace(selectedCategory))
+                result = result.Where(p => p.Category == selectedCategory);
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+                result = result.Where(p =>
+                    p.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    p.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    p.Category.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
+            return result;
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
         await LoadProducts();
+        ReadQueryParams();
+    }
+
+    protected override void OnParametersSet()
+    {
+        ReadQueryParams();
+    }
+
+    private void ReadQueryParams()
+    {
+        var uri = new Uri(NavigationManager.Uri);
+        var query = uri.Query.TrimStart('?');
+        foreach (var part in query.Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var kv = part.Split('=', 2);
+            if (kv.Length == 2)
+            {
+                var key = Uri.UnescapeDataString(kv[0]);
+                var value = Uri.UnescapeDataString(kv[1]);
+                if (key == "search" && !string.IsNullOrEmpty(value)) searchTerm = value;
+                if (key == "category" && !string.IsNullOrEmpty(value)) selectedCategory = value;
+            }
+        }
     }
 
     private async Task LoadProducts()
@@ -122,19 +324,37 @@ else
         {
             showError = true;
             errorMessage = "We couldn't fetch our products. Please check your connection or try again later.";
-            Console.WriteLine($"Error fetching products: {ex.Message}");
+            Console.WriteLine($"Error: {ex.Message}");
         }
     }
 
-    private async Task RetryLoad()
+    private async Task RetryLoad() => await LoadProducts();
+
+    private void ClearFilters()
     {
-        await LoadProducts();
+        searchTerm = string.Empty;
+        selectedCategory = null;
     }
+
+    private void OpenModal(Product product) => modalProduct = product;
+    private void CloseModal() => modalProduct = null;
 
     private async Task AddToCart(Product product)
     {
         await CartService.AddToCart(product);
-        cartToast = $"✓ {product.Name} added to cart!";
+        ShowToast($"✓ {product.Name} added to cart!");
+    }
+
+    private async Task AddToCartFromModal(Product product)
+    {
+        await CartService.AddToCart(product);
+        CloseModal();
+        ShowToast($"✓ {product.Name} added to cart!");
+    }
+
+    private async void ShowToast(string message)
+    {
+        cartToast = message;
         StateHasChanged();
         await Task.Delay(2500);
         cartToast = null;

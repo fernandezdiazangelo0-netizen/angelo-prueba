@@ -1,0 +1,272 @@
+@page "/checkout"
+@inject SexShopWASM.Services.ICartService CartService
+@inject NavigationManager NavigationManager
+@using SexShopWASM.Models
+@implements IDisposable
+
+<PageTitle>Checkout – SexShop</PageTitle>
+
+@if (isLoading)
+{
+    <div class="d-flex justify-content-center py-5">
+        <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+    </div>
+}
+else if (orderPlaced)
+{
+    <!-- Order Success -->
+    <div class="text-center py-5 animate-up">
+        <div class="mb-4" style="font-size: 5rem;">🎉</div>
+        <h2 class="fw-bold text-primary mb-3">Order Confirmed!</h2>
+        <p class="text-muted lead mb-4">Thank you for your purchase. We'll send a confirmation to your email shortly.<br/>Your package will be shipped discreetly within 2-5 business days.</p>
+        <div class="card glass border-0 shadow-sm rounded-4 p-4 mx-auto mb-4" style="max-width:400px;">
+            <p class="mb-1 text-muted small">Order Number</p>
+            <h4 class="fw-bold text-primary mb-0">#@orderNumber</h4>
+        </div>
+        <a href="products" class="btn btn-primary rounded-pill px-5 shadow">
+            <i class="bi bi-bag me-2"></i> Continue Shopping
+        </a>
+    </div>
+}
+else if (cartItems == null || !cartItems.Any())
+{
+    <div class="text-center py-5">
+        <i class="bi bi-cart-x display-1 text-muted"></i>
+        <h3 class="mt-3 fw-bold">Your cart is empty</h3>
+        <p class="text-muted">Add some products before checking out.</p>
+        <a href="products" class="btn btn-primary rounded-pill px-5 mt-2">Shop Now</a>
+    </div>
+}
+else
+{
+    <div class="animate-up">
+        <div class="mb-5">
+            <h2 class="display-5 fw-bold text-primary">Checkout</h2>
+            <p class="text-muted">Complete your order securely and discreetly.</p>
+        </div>
+
+        <div class="row g-4">
+            <!-- Checkout Form -->
+            <div class="col-lg-7">
+                <!-- Contact Info -->
+                <div class="card glass border-0 shadow-sm rounded-4 p-4 mb-4">
+                    <h5 class="fw-bold mb-4"><i class="bi bi-person-circle me-2 text-primary"></i>Contact Information</h5>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small text-uppercase text-muted">First Name</label>
+                            <input type="text" class="form-control" @bind="form.FirstName" placeholder="John" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small text-uppercase text-muted">Last Name</label>
+                            <input type="text" class="form-control" @bind="form.LastName" placeholder="Doe" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small text-uppercase text-muted">Email Address</label>
+                            <input type="email" class="form-control" @bind="form.Email" placeholder="you@email.com" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small text-uppercase text-muted">Phone (optional)</label>
+                            <input type="tel" class="form-control" @bind="form.Phone" placeholder="+1 (555) 000-0000" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shipping Address -->
+                <div class="card glass border-0 shadow-sm rounded-4 p-4 mb-4">
+                    <h5 class="fw-bold mb-4"><i class="bi bi-geo-alt me-2 text-primary"></i>Shipping Address</h5>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small text-uppercase text-muted">Street Address</label>
+                            <input type="text" class="form-control" @bind="form.Address" placeholder="123 Main St" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small text-uppercase text-muted">City</label>
+                            <input type="text" class="form-control" @bind="form.City" placeholder="New York" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold small text-uppercase text-muted">State</label>
+                            <input type="text" class="form-control" @bind="form.State" placeholder="NY" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold small text-uppercase text-muted">ZIP Code</label>
+                            <input type="text" class="form-control" @bind="form.Zip" placeholder="10001" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment -->
+                <div class="card glass border-0 shadow-sm rounded-4 p-4 mb-4">
+                    <h5 class="fw-bold mb-4"><i class="bi bi-credit-card me-2 text-primary"></i>Payment Details</h5>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small text-uppercase text-muted">Card Number</label>
+                            <input type="text" class="form-control" @bind="form.CardNumber" placeholder="4242 4242 4242 4242" maxlength="19" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small text-uppercase text-muted">Expiry Date</label>
+                            <input type="text" class="form-control" @bind="form.Expiry" placeholder="MM/YY" maxlength="5" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small text-uppercase text-muted">CVV</label>
+                            <input type="password" class="form-control" @bind="form.Cvv" placeholder="•••" maxlength="4" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small text-uppercase text-muted">Name on Card</label>
+                            <input type="text" class="form-control" @bind="form.CardName" placeholder="John Doe" />
+                        </div>
+                    </div>
+                    <div class="mt-3 d-flex gap-3 align-items-center text-muted small">
+                        <i class="bi bi-lock-fill text-success"></i> Secured with 256-bit SSL encryption
+                        <div class="ms-auto d-flex gap-2">
+                            <i class="bi bi-credit-card-2-front-fill fs-4"></i>
+                            <i class="bi bi-paypal fs-4 text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(validationError))
+                {
+                    <div class="alert alert-danger border-0 rounded-3 py-2 small mb-3">
+                        <i class="bi bi-exclamation-circle me-1"></i>@validationError
+                    </div>
+                }
+            </div>
+
+            <!-- Order Summary -->
+            <div class="col-lg-5">
+                <div class="card glass border-0 shadow-sm rounded-4 p-4 sticky-top" style="top: 100px;">
+                    <h5 class="fw-bold mb-4"><i class="bi bi-bag-check me-2 text-primary"></i>Order Summary</h5>
+
+                    <div class="mb-4" style="max-height: 300px; overflow-y: auto;">
+                        @foreach (var item in cartItems)
+                        {
+                            <div class="d-flex align-items-center gap-3 mb-3 pb-3 border-bottom">
+                                <img src="@(string.IsNullOrEmpty(item.Product.ImageUrl) ? "https://placehold.co/60x60?text=?" : item.Product.ImageUrl)"
+                                     class="rounded-3 shadow-sm" style="width:60px;height:60px;object-fit:cover;" alt="@item.Product.Name" />
+                                <div class="flex-grow-1">
+                                    <p class="mb-0 fw-semibold small">@item.Product.Name</p>
+                                    <p class="mb-0 text-muted" style="font-size:0.75rem;">Qty: @item.Quantity</p>
+                                </div>
+                                <span class="fw-bold text-primary">$@((item.Product.Price * item.Quantity).ToString("0.00"))</span>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Subtotal</span>
+                        <span class="fw-bold">$@CartService.GetTotalPrice().ToString("0.00")</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Shipping</span>
+                        <span class="text-success fw-bold">Free</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Tax (8%)</span>
+                        <span class="fw-bold">$@((CartService.GetTotalPrice() * 0.08m).ToString("0.00"))</span>
+                    </div>
+                    <hr class="my-3" />
+                    <div class="d-flex justify-content-between mb-4">
+                        <span class="h5 fw-bold">Total</span>
+                        <span class="h4 fw-bold text-primary">$@((CartService.GetTotalPrice() * 1.08m).ToString("0.00"))</span>
+                    </div>
+
+                    <button class="btn btn-primary btn-lg w-100 rounded-pill shadow py-3 fw-bold"
+                            @onclick="PlaceOrder" disabled="@isSubmitting">
+                        @if (isSubmitting)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
+                        <i class="bi bi-check-circle me-2"></i> Place Order
+                    </button>
+
+                    <div class="text-center mt-3 text-muted small">
+                        <i class="bi bi-shield-check me-1 text-success"></i> Secure & discreet delivery guaranteed
+                    </div>
+
+                    <div class="mt-3 text-center">
+                        <a href="cart" class="text-muted small text-decoration-none">
+                            <i class="bi bi-arrow-left me-1"></i> Back to Cart
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem rgba(136, 14, 79, 0.15);
+    }
+</style>
+
+@code {
+    private List<CartItem>? cartItems;
+    private bool isLoading = true;
+    private bool isSubmitting = false;
+    private bool orderPlaced = false;
+    private string orderNumber = string.Empty;
+    private string validationError = string.Empty;
+
+    private CheckoutForm form = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            cartItems = await CartService.GetItems();
+        }
+        catch
+        {
+            cartItems = new();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    public void Dispose() { }
+
+    private async Task PlaceOrder()
+    {
+        validationError = string.Empty;
+
+        // Basic validation
+        if (string.IsNullOrWhiteSpace(form.FirstName) || string.IsNullOrWhiteSpace(form.LastName))
+        { validationError = "Please enter your first and last name."; return; }
+        if (string.IsNullOrWhiteSpace(form.Email) || !form.Email.Contains('@'))
+        { validationError = "Please enter a valid email address."; return; }
+        if (string.IsNullOrWhiteSpace(form.Address) || string.IsNullOrWhiteSpace(form.City))
+        { validationError = "Please fill in your complete shipping address."; return; }
+        if (string.IsNullOrWhiteSpace(form.CardNumber) || form.CardNumber.Replace(" ", "").Length < 13)
+        { validationError = "Please enter a valid card number."; return; }
+        if (string.IsNullOrWhiteSpace(form.Expiry) || string.IsNullOrWhiteSpace(form.Cvv))
+        { validationError = "Please fill in your card expiry and CVV."; return; }
+
+        isSubmitting = true;
+        await Task.Delay(1500); // Simulate payment processing
+
+        orderNumber = $"SS-{DateTime.Now:yyyyMMdd}-{new Random().Next(1000, 9999)}";
+        await CartService.ClearCart();
+        orderPlaced = true;
+        isSubmitting = false;
+    }
+
+    private class CheckoutForm
+    {
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+        public string Address { get; set; } = string.Empty;
+        public string City { get; set; } = string.Empty;
+        public string State { get; set; } = string.Empty;
+        public string Zip { get; set; } = string.Empty;
+        public string CardNumber { get; set; } = string.Empty;
+        public string Expiry { get; set; } = string.Empty;
+        public string Cvv { get; set; } = string.Empty;
+        public string CardName { get; set; } = string.Empty;
+    }
+}
