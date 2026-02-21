@@ -24,6 +24,13 @@ public class ProductsController : ControllerBase
         return await _context.Products.ToListAsync();
     }
 
+    // GET: api/Products/ping
+    [HttpGet("ping")]
+    public IActionResult Ping()
+    {
+        return Ok(new { status = "API is reachable", timestamp = DateTime.UtcNow });
+    }
+
     // GET: api/Products/5
     [HttpGet("{id}")]
     public async Task<ActionResult<Product>> GetProduct(int id)
