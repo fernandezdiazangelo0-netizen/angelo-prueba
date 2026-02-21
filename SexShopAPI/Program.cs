@@ -119,15 +119,24 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
-        // MigrateAsync crea la BD si no existe y aplica migraciones pendientes
-        // Con InMemory este metodo no hace nada (es seguro llamarlo igual)
-        await context.Database.MigrateAsync();
+        
+        if (context.Database.IsNpgsql())
+        {
+            // PostgreSQL (Produccion) - Aplicar migraciones
+            await context.Database.MigrateAsync();
+        }
+        else
+        {
+            // InMemory o SQLite - Asegurar que la BD existe
+            await context.Database.EnsureCreatedAsync();
+        }
+
         await DbSeeder.SeedRolesAndAdminAsync(services);
     }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred seeding the DB.");
+        logger.LogError(ex, "An error occurred during DB initialization.");
     }
 }
 
