@@ -13,16 +13,32 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Configure DbContext
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+if (!string.IsNullOrEmpty(connectionString) && connectionString.StartsWith("postgresql://"))
+{
+    // Convertir URI de Postgres (Neon) a formato Npgsql tradicional
+    var uri = new Uri(connectionString);
+    var userInfo = uri.UserInfo.Split(':');
+    var user = userInfo[0];
+    var password = userInfo.Length > 1 ? userInfo[1] : "";
+    var host = uri.Host;
+    var port = uri.Port > 0 ? uri.Port : 5432;
+    var database = uri.AbsolutePath.TrimStart('/');
+    
+    connectionString = $"Host={host};Port={port};Database={database};Username={user};Password={password};SSL Mode=Require;Trust Server Certificate=true";
+}
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-    // Solo usamos Npgsql si hay una cadena que NO parezca un archivo .db (fallback local)
     if (!string.IsNullOrEmpty(connectionString) && !connectionString.Contains(".db"))
     {
+        // PostgreSQL (Produccion con Neon.tech)
         options.UseNpgsql(connectionString);
     }
     else
     {
-        options.UseInMemoryDatabase("SexShopDb");
+        // SQLite como fallback local/provisional mas estable que InMemory
+        options.UseSqlite("Data Source=sexshop_prod.db");
     }
 });
 
