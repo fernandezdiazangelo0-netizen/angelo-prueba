@@ -33,9 +33,15 @@ public class ProductsController : ControllerBase
 
     // GET: api/Products/ping
     [HttpGet("ping")]
-    public IActionResult Ping()
+    public IActionResult Ping([FromServices] IConfiguration config)
     {
-        return Ok(new { status = "API is reachable", timestamp = DateTime.UtcNow });
+        var conn = config.GetConnectionString("DefaultConnection") ?? "MISSING";
+        return Ok(new { 
+            status = "API is reachable", 
+            connPrefix = conn.Length > 10 ? conn.Substring(0, 10) : conn,
+            connLength = conn.Length,
+            timestamp = DateTime.UtcNow 
+        });
     }
 
     // GET: api/Products/5
