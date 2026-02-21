@@ -15,14 +15,13 @@ var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-    if (!string.IsNullOrEmpty(connectionString))
+    // Solo usamos Npgsql si hay una cadena que NO parezca un archivo .db (fallback local)
+    if (!string.IsNullOrEmpty(connectionString) && !connectionString.Contains(".db"))
     {
-        // PostgreSQL (Neon.tech en produccion, o cualquier Postgres local)
         options.UseNpgsql(connectionString);
     }
     else
     {
-        // Fallback a In-Memory solo si no hay cadena de conexion configurada
         options.UseInMemoryDatabase("SexShopDb");
     }
 });
