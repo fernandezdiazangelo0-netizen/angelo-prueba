@@ -111,8 +111,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Seed Data — comentado temporalmente para diagnostico
-/*
+// Seed Data — aplica migraciones y siembra datos iniciales
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -122,12 +121,11 @@ using (var scope = app.Services.CreateScope())
         
         if (context.Database.IsNpgsql())
         {
-            // PostgreSQL (Produccion) - Aplicar migraciones
             await context.Database.MigrateAsync();
         }
         else
         {
-            // InMemory o SQLite - Asegurar que la BD existe
+            // Para SQLite/InMemory, EnsureCreated crea las tablas si no existen
             await context.Database.EnsureCreatedAsync();
         }
 
@@ -139,6 +137,5 @@ using (var scope = app.Services.CreateScope())
         logger.LogError(ex, "An error occurred during DB initialization.");
     }
 }
-*/
 
 app.Run();
