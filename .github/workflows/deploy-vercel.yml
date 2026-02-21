@@ -45,11 +45,14 @@ jobs:
           # 1. Copy static files (index.html, framework, etc.)
           cp -r release/wwwroot/* .vercel/output/static/
           
-          # 2. Create the Vercel output configuration for SPA routing
-          # This replaces the vercel.json for prebuilt deployments
+          # 2. Add a 404.html fallback (copy of index.html) for extra reliability in SPA
+          cp release/wwwroot/index.html .vercel/output/static/404.html
+          
+          # 3. Create the Vercel output configuration for SPA routing
+          # Using a more robust route configuration for Build Output API v3
           echo '{"version":3,"routes":[{"handle":"filesystem"},{"src":"/(.*)","dest":"/index.html"}]}' > .vercel/output/config.json
           
-          # 3. Link the project manually
+          # 4. Link the project manually
           VERCEL_SCOPE="angelos-projects-ecf5b5b3"
           VERCEL_PID="prj_kegr1jmBdL5HkZPGMHT4jReGFK9v"
           mkdir -p .vercel
