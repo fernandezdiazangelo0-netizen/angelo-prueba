@@ -2,6 +2,7 @@
 @inject SexShopWASM.Services.ICartService CartService
 @inject NavigationManager NavigationManager
 @using SexShopWASM.Models
+@implements IDisposable
 
 <div class="container py-5">
     <div class="cart-header mb-5 glass p-4 animate-up" style="border-radius: 20px;">
@@ -9,7 +10,15 @@
         <p class="text-muted mb-0">Review your items and proceed to checkout for a world of pleasure.</p>
     </div>
 
-    @if (cartItems == null || !cartItems.Any())
+    @if (isLoading)
+    {
+        <div class="d-flex justify-content-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (cartItems == null || !cartItems.Any())
     {
         <div class="empty-cart-container text-center py-5 glass" style="border-radius: 20px;">
             <i class="bi bi-cart-x display-1 text-muted mb-4"></i>
@@ -126,40 +135,66 @@
 
 @code {
     private List<CartItem>? cartItems;
+    private bool isLoading = true;
 
     protected override async Task OnInitializedAsync()
     {
-        cartItems = await CartService.GetItems();
-        CartService.OnChange += StateHasChanged;
+        try
+        {
+            isLoading = true;
+            hasError = false;
+            cartItems = await CartService.GetItems();
+            CartService.OnChange += HandleCartChanged;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Cart load error: {ex.Message}");
+            cartItems = new List<CartItem>();
+            hasError = false; // Still show empty cart rather than error
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void HandleCartChanged()
+    {
+        cartItems = CartService.GetItems().Result;
+        InvokeAsync(StateHasChanged);
     }
 
     public void Dispose()
     {
-        CartService.OnChange -= StateHasChanged;
+        CartService.OnChange -= HandleCartChanged;
     }
 
     private async Task AddToCart(Product product)
     {
         await CartService.AddToCart(product);
+        cartItems = await CartService.GetItems();
     }
 
     private async Task RemoveFromCart(int productId)
     {
         await CartService.RemoveFromCart(productId);
+        cartItems = await CartService.GetItems();
     }
 
     private async Task RemoveCompletely(int productId)
     {
         await CartService.RemoveCompletely(productId);
+        cartItems = await CartService.GetItems();
     }
 
     private async Task ClearCart()
     {
         await CartService.ClearCart();
+        cartItems = await CartService.GetItems();
     }
 
     private void ProceedToCheckout()
     {
-        // Placeholder for checkout logic
+        NavigationManager.NavigateTo("checkout");
     }
 }
