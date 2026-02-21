@@ -54,8 +54,8 @@ jobs:
       - name: Deploy to Vercel
         run: |
           set -eo pipefail
-          # Using the verified scope and project ID
-          vercel deploy --prod --token ${{ secrets.VERCEL_TOKEN }} --yes --cwd deploy --scope angelos-projects-ecf5b5b3 2>&1 | tee deploy-output.txt
+          # Using --debug to see why the alias might not be updating
+          vercel deploy --prod --token ${{ secrets.VERCEL_TOKEN }} --yes --cwd deploy --scope angelos-projects-ecf5b5b3 --debug 2>&1 | tee deploy-output.txt
 
       - name: Display deploy logs on failure
         if: failure()
