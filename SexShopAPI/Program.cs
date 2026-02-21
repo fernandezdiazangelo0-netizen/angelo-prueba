@@ -47,10 +47,12 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
-// Configure JWT Authentication
-var jwtKey = string.IsNullOrEmpty(builder.Configuration["Jwt:Key"])
-    ? "ThisIsASecretKeyForSexShopAPI_MustBeLongEnough"
-    : builder.Configuration["Jwt:Key"]!;
+// Configure JWT Authentication — enforce minimum 32 chars (256 bits) for security
+const string fallbackJwtKey = "SexShop@2025#SuperSecretKey$256BitMinimumLengthRequired!";
+var configuredKey = builder.Configuration["Jwt:Key"];
+var jwtKey = (string.IsNullOrEmpty(configuredKey) || configuredKey.Length < 32)
+    ? fallbackJwtKey
+    : configuredKey;
 var jwtIssuer = string.IsNullOrEmpty(builder.Configuration["Jwt:Issuer"])
     ? "SexShopAPI"
     : builder.Configuration["Jwt:Issuer"]!;
