@@ -43,32 +43,19 @@ jobs:
           cp -r release/wwwroot/* deploy/
           cp vercel.json deploy/
           
-          # Explicitly link the project inside the deployment directory
+          # Use the verified IDs from diagnostics
+          VERCEL_SCOPE="angelos-projects-ecf5b5b3"
+          VERCEL_PID="prj_kegri1jmBdL5HkZPGMHT4jReGFK9v"
+          
           mkdir -p deploy/.vercel
-          echo '{"orgId":"'"$VERCEL_ORG_ID"'","projectId":"'"$VERCEL_PROJECT_ID"'"}' > deploy/.vercel/project.json
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
-      - name: Vercel Diagnostics
-        run: |
-          echo "Checking Vercel account..."
-          vercel whoami --token ${{ secrets.VERCEL_TOKEN }}
-          echo "Checking accessible teams..."
-          vercel teams list --token ${{ secrets.VERCEL_TOKEN }}
-          echo "Listing projects in discovery scope..."
-          # Try to list projects using the ID discovered in the previous run
-          vercel ls --token ${{ secrets.VERCEL_TOKEN }} --scope angelos-projects-ecf5b5b3
-        continue-on-error: true
+          echo "{\"orgId\":\"$VERCEL_SCOPE\",\"projectId\":\"$VERCEL_PID\"}" > deploy/.vercel/project.json
+          echo "Project linked to scope: $VERCEL_SCOPE"
 
       - name: Deploy to Vercel
         run: |
           set -eo pipefail
-          # Using the scope discovered in diagnostics: angelos-projects-ecf5b5b3
+          # Using the verified scope and project ID
           vercel deploy --prod --token ${{ secrets.VERCEL_TOKEN }} --yes --cwd deploy --scope angelos-projects-ecf5b5b3 2>&1 | tee deploy-output.txt
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Display deploy logs on failure
         if: failure()
