@@ -37,24 +37,29 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
-      - name: Prepare 404.html fallback
+      - name: Prepare static deployment with vercel.json
         run: |
-          # The most reliable way for SPA on static hosts:
-          # Copy index.html to 404.html. Vercel will serve it for any unknown route.
-          cp release/wwwroot/index.html release/wwwroot/404.html
-          
-          # We also keep the project link
+          # The CLI needs the .vercel folder inside the deployment directory to recognize the project
+          cd release/wwwroot
           mkdir -p .vercel
           echo "{\"orgId\":\"angelos-projects-ecf5b5b3\",\"projectId\":\"prj_kegr1jmBdL5HkZPGMHT4jReGFK9v\"}" > .vercel/project.json
           
-          echo "Fallback prepared."
-          ls -l release/wwwroot/404.html
+          # Create a clean vercel.json inside wwwroot for SPA routing
+          # Using rewrites is the standard way for Vercel v2+
+          echo '{"version":2,"cleanUrls":true,"trailingSlash":false,"rewrites":[{"source":"/(.*)","destination":"/index.html"}]}' > vercel.json
+          
+          # Also add a 404.html fallback as a double safety
+          cp index.html 404.html
+          
+          echo "Folder prepared. Ready for deployment."
+          ls -R .vercel
 
       - name: Deploy to Vercel
         run: |
           set -eo pipefail
-          # Deploying with --prod and using the project link
-          vercel deploy release/wwwroot --prod --token ${{ secrets.VERCEL_TOKEN }} --scope angelos-projects-ecf5b5b3 --yes 2>&1 | tee deploy-output.txt
+          # Move into the folder and deploy from there
+          cd release/wwwroot
+          vercel deploy --prod --token ${{ secrets.VERCEL_TOKEN }} --scope angelos-projects-ecf5b5b3 --yes 2>&1 | tee deploy-output.txt
 
       - name: Display deploy logs on failure
         if: failure()
