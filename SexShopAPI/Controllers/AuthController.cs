@@ -25,9 +25,19 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginModel model)
     {
-        var user = await _userManager.FindByNameAsync(model.Username);
-        if (user != null && await _userManager.CheckPasswordAsync(user, model.Password))
+        try
         {
+            if (model == null || string.IsNullOrEmpty(model.Username) || string.IsNullOrEmpty(model.Password))
+                return BadRequest(new { message = "Username and password are required." });
+
+            var user = await _userManager.FindByNameAsync(model.Username);
+            if (user == null || !await _userManager.CheckPasswordAsync(user, model.Password))
+                return Unauthorized(new { message = "Invalid username or password." });
+
+            var jwtKey = _configuration["Jwt:Key"];
+            if (string.IsNullOrEmpty(jwtKey))
+                return StatusCode(500, new { message = "Server JWT configuration is missing. Contact administrator." });
+
             var userRoles = await _userManager.GetRolesAsync(user);
 
             var authClaims = new List<Claim>
@@ -37,16 +47,13 @@ public class AuthController : ControllerBase
             };
 
             foreach (var role in userRoles)
-            {
                 authClaims.Add(new Claim(ClaimTypes.Role, role));
-            }
 
-            var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
-
+            var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
             var token = new JwtSecurityToken(
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
-                expires: DateTime.Now.AddHours(3),
+                expires: DateTime.UtcNow.AddHours(3),
                 claims: authClaims,
                 signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
             );
@@ -57,7 +64,10 @@ public class AuthController : ControllerBase
                 expiration = token.ValidTo
             });
         }
-        return Unauthorized();
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Login error: " + ex.Message });
+        }
     }
 
     [HttpPost("register")]

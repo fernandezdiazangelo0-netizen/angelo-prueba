@@ -48,9 +48,9 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddDefaultTokenProviders();
 
 // Configure JWT Authentication
-var jwtKey = builder.Configuration["Jwt:Key"];
-var jwtIssuer = builder.Configuration["Jwt:Issuer"];
-var jwtAudience = builder.Configuration["Jwt:Audience"];
+var jwtKey = builder.Configuration["Jwt:Key"] ?? "ThisIsASecretKeyForSexShopAPI_MustBeLongEnough";
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "SexShopAPI";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "SexShopAPIUsers";
 
 builder.Services.AddAuthentication(options =>
 {
