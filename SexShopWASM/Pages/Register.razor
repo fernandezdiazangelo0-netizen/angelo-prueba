@@ -1,46 +1,107 @@
 @page "/register"
 @inject IAuthService AuthService
 @inject NavigationManager NavigationManager
+@using SexShopWASM.Models
 
-<h3>Register</h3>
+<PageTitle>Register – SexShop</PageTitle>
 
-<EditForm Model="registerModel" OnValidSubmit="HandleRegister">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
+<div class="auth-wrapper d-flex align-items-center justify-content-center py-5">
+    <div class="auth-card glass shadow-lg p-5 rounded-4 animate-up" style="max-width: 480px; width: 100%;">
+        <div class="text-center mb-4">
+            <span class="bi bi-person-plus-fill text-primary" style="font-size: 2.5rem;"></span>
+            <h2 class="fw-bold mt-2 mb-1">Create Account</h2>
+            <p class="text-muted small">Join SexShop for an exclusive experience</p>
+        </div>
 
-    <div class="mb-3">
-        <label>Username</label>
-        <InputText @bind-Value="registerModel.Username" class="form-control" />
+        <EditForm Model="registerModel" OnValidSubmit="HandleRegister">
+            <DataAnnotationsValidator />
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold small text-uppercase text-muted">Username</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-person text-muted"></i></span>
+                    <InputText @bind-Value="registerModel.Username" class="form-control border-start-0 ps-0" placeholder="Choose a username" />
+                </div>
+                <ValidationMessage For="@(() => registerModel.Username)" class="text-danger small mt-1" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold small text-uppercase text-muted">Email Address</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-envelope text-muted"></i></span>
+                    <InputText @bind-Value="registerModel.Email" class="form-control border-start-0 ps-0" placeholder="your@email.com" />
+                </div>
+                <ValidationMessage For="@(() => registerModel.Email)" class="text-danger small mt-1" />
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-semibold small text-uppercase text-muted">Password</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-lock text-muted"></i></span>
+                    <InputText @bind-Value="registerModel.Password" type="password" class="form-control border-start-0 ps-0" placeholder="Create a strong password" />
+                </div>
+                <ValidationMessage For="@(() => registerModel.Password)" class="text-danger small mt-1" />
+            </div>
+
+            @if (!string.IsNullOrEmpty(error))
+            {
+                <div class="alert alert-danger border-0 rounded-3 py-2 small mb-3">
+                    <i class="bi bi-exclamation-circle me-1"></i>@error
+                </div>
+            }
+
+            @if (success)
+            {
+                <div class="alert alert-success border-0 rounded-3 py-2 small mb-3">
+                    <i class="bi bi-check-circle me-1"></i>Account created! Redirecting to login...
+                </div>
+            }
+
+            <button type="submit" class="btn btn-primary w-100 rounded-pill py-2 fw-bold shadow-sm mb-3" disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                }
+                <i class="bi bi-person-check me-2"></i> Create Account
+            </button>
+        </EditForm>
+
+        <div class="text-center">
+            <span class="text-muted small">Already have an account? </span>
+            <a href="#/login" class="text-primary fw-bold small text-decoration-none">Sign in here</a>
+        </div>
     </div>
-    <div class="mb-3">
-        <label>Email</label>
-        <InputText @bind-Value="registerModel.Email" class="form-control" />
-    </div>
-    <div class="mb-3">
-        <label>Password</label>
-        <InputText @bind-Value="registerModel.Password" type="password" class="form-control" />
-    </div>
+</div>
 
-    <button type="submit" class="btn btn-primary">Register</button>
-
-    @if (!string.IsNullOrEmpty(error))
-    {
-        <div class="alert alert-danger mt-3 mb-0">@error</div>
+<style>
+    .auth-wrapper { min-height: 70vh; }
+    .auth-card {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255,255,255,0.5);
     }
-</EditForm>
+    .input-group .form-control:focus { box-shadow: none; border-color: var(--primary-color, #880E4F); }
+    .input-group:focus-within .input-group-text { border-color: var(--primary-color, #880E4F); }
+</style>
 
 @code {
     private RegisterModel registerModel = new();
     private string error = string.Empty;
+    private bool isLoading = false;
+    private bool success = false;
 
     private async Task HandleRegister()
     {
+        isLoading = true;
         error = string.Empty;
         var result = await AuthService.Register(registerModel);
-        
+        isLoading = false;
+
         if (result.Successful)
         {
-            NavigationManager.NavigateTo("/login");
+            success = true;
+            await Task.Delay(1500);
+            NavigationManager.NavigateTo("#/login");
         }
         else
         {

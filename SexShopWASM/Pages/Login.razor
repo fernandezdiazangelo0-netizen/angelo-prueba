@@ -1,44 +1,92 @@
 @page "/login"
 @inject IAuthService AuthService
 @inject NavigationManager NavigationManager
+@using SexShopWASM.Models
 
-<h3>Login</h3>
+<PageTitle>Login – SexShop</PageTitle>
 
-<EditForm Model="loginModel" OnValidSubmit="HandleLogin">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
+<div class="auth-wrapper d-flex align-items-center justify-content-center py-5">
+    <div class="auth-card glass shadow-lg p-5 rounded-4 animate-up" style="max-width: 440px; width: 100%;">
+        <div class="text-center mb-4">
+            <span class="bi bi-heart-fill text-primary" style="font-size: 2.5rem;"></span>
+            <h2 class="fw-bold mt-2 mb-1">Welcome Back</h2>
+            <p class="text-muted small">Sign in to your SexShop account</p>
+        </div>
 
-    <div class="mb-3">
-        <label>Username</label>
-        <InputText @bind-Value="loginModel.Username" class="form-control" />
+        <EditForm Model="loginModel" OnValidSubmit="HandleLogin">
+            <DataAnnotationsValidator />
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold small text-uppercase text-muted">Username</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-person text-muted"></i></span>
+                    <InputText @bind-Value="loginModel.Username" class="form-control border-start-0 ps-0" placeholder="Enter your username" />
+                </div>
+                <ValidationMessage For="@(() => loginModel.Username)" class="text-danger small mt-1" />
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-semibold small text-uppercase text-muted">Password</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-lock text-muted"></i></span>
+                    <InputText @bind-Value="loginModel.Password" type="password" class="form-control border-start-0 ps-0" placeholder="Enter your password" />
+                </div>
+                <ValidationMessage For="@(() => loginModel.Password)" class="text-danger small mt-1" />
+            </div>
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger border-0 rounded-3 py-2 small mb-3">
+                    <i class="bi bi-exclamation-circle me-1"></i>@errorMessage
+                </div>
+            }
+
+            <button type="submit" class="btn btn-primary w-100 rounded-pill py-2 fw-bold shadow-sm mb-3" disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                }
+                <i class="bi bi-box-arrow-in-right me-2"></i> Sign In
+            </button>
+        </EditForm>
+
+        <div class="text-center">
+            <span class="text-muted small">Don't have an account? </span>
+            <a href="#/register" class="text-primary fw-bold small text-decoration-none">Register here</a>
+        </div>
     </div>
-    <div class="mb-3">
-        <label>Password</label>
-        <InputText @bind-Value="loginModel.Password" type="password" class="form-control" />
-    </div>
+</div>
 
-    <button type="submit" class="btn btn-primary">Login</button>
-</EditForm>
-
-@if (!string.IsNullOrEmpty(errorMessage))
-{
-    <div class="alert alert-danger mt-3">@errorMessage</div>
-}
+<style>
+    .auth-wrapper { min-height: 70vh; }
+    .auth-card {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255,255,255,0.5);
+    }
+    .input-group .form-control:focus { box-shadow: none; border-color: var(--primary-color, #880E4F); }
+    .input-group .form-control:focus ~ .input-group-text,
+    .input-group:focus-within .input-group-text { border-color: var(--primary-color, #880E4F); }
+</style>
 
 @code {
     private LoginModel loginModel = new();
     private string? errorMessage;
+    private bool isLoading = false;
 
     private async Task HandleLogin()
     {
+        isLoading = true;
+        errorMessage = null;
         var result = await AuthService.Login(loginModel);
+        isLoading = false;
         if (result != null)
         {
             NavigationManager.NavigateTo("/");
         }
         else
         {
-            errorMessage = "Invalid username or password";
+            errorMessage = "Invalid username or password. Please try again.";
         }
     }
 }
